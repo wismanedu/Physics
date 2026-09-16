@@ -9,18 +9,18 @@
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     html, body {
       width: 100%;
       height: 100%;
       height: 100dvh;
-      margin: 0;
-      padding: 2px; /* 降至最低外距 */
-      font-family: sans-serif;
-      font-size: 12px;
+      overflow: hidden; /* 強制全域禁止捲動 */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
       background-color: #f4f4f9;
-      overflow: hidden; /* 徹底杜絕上下捲動軸 */
     }
 
     /* 主響應式容器 */
@@ -30,13 +30,14 @@
       height: 100%;
       max-width: 800px;
       margin: 0 auto;
-      gap: 2px; /* 極小化組件間距 */
+      padding: 2px;
+      gap: 2px;
     }
 
-    /* Canvas 區塊 - 自動彈性分配剩餘高度 */
+    /* Canvas 區塊 - 自動分配所有剩餘空間 */
     .canvas-container {
-      flex: 1 1 auto;
-      min-height: 0;
+      flex: 1 1 0%;
+      min-height: 0; /* 允許 flex 子元素縮小至 0 以下 */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -50,69 +51,98 @@
       aspect-ratio: 640 / 585;
       background-color: #ffd;
       border: 1px solid #ccc;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       border-radius: 4px;
       object-fit: contain;
     }
 
-    /* 控制與題目區域 - 極致緊湊 */
+    /* 控制面板 - 尺寸絕對緊密，不可被壓縮或伸展 */
     .controls-container {
       flex: 0 0 auto;
       background: #ffffff;
-      padding: 4px 6px; /* 最小化區塊內距 */
+      padding: 3px 4px;
       border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .btn-group {
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       display: flex;
-      flex-wrap: wrap;
-      gap: 2px; /* 按鈕間僅留極小間距 */
-      margin-bottom: 2px;
+      flex-direction: column;
+      gap: 2px;
     }
 
-    /* 按鈕樣式：邊框貼合文字 */
+    /* 控制按鈕區 */
+    .btn-group-main {
+      display: flex;
+      gap: 2px;
+    }
+    
+    .btn-group-main input[type="button"] {
+      flex: 1;
+    }
+
+    /* 題目按鈕網格化 */
+    .btn-grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 2px;
+    }
+
+    .btn-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 2px;
+    }
+
+    /* 極簡按鈕樣式 */
     input[type="button"] {
-      padding: 1px 3px; /* 緊貼內字 */
-      font-size: 12px;
-      line-height: 1.2;
+      padding: 1px 0;
+      font-size: 11px;
+      line-height: 1.1;
+      height: 22px;
       cursor: pointer;
-      border-radius: 3px;
-      border: 1px solid #888;
-      background-color: #f0f0f0;
+      border-radius: 2px;
+      border: 1px solid #aaa;
+      background-color: #f8f8f8;
       touch-action: manipulation;
+      text-align: center;
     }
 
     input[type="button"]:active {
       background-color: #ddd;
     }
 
-    /* 滑塊列緊湊化 */
+    /* 滑塊列極致緊湊 */
     .slider-row {
       display: flex;
       align-items: center;
-      gap: 4px;
-      margin-bottom: 2px;
+      gap: 2px;
       background: #f8f9fa;
-      padding: 1px 4px;
-      border-radius: 3px;
+      padding: 0 2px;
+      height: 20px;
+      border-radius: 2px;
     }
 
     .slider-label {
-      width: 65px;
+      width: 55px;
       font-weight: bold;
-      font-size: 11px;
+      font-size: 10px;
+      white-space: nowrap;
     }
 
     .value-box {
       font-weight: bold;
-      font-size: 11px;
-      border: 1px solid #555;
-      padding: 0 2px;
+      font-size: 10px;
+      border: 1px solid #666;
+      padding: 0 1px;
       border-radius: 2px;
       background-color: #fff;
-      min-width: 32px;
+      min-width: 28px;
       text-align: center;
+      line-height: 14px;
+    }
+
+    .unit-text {
+      font-size: 9px;
+      color: #555;
+      width: 24px;
     }
 
     .range-control {
@@ -120,26 +150,28 @@
       display: flex;
       align-items: center;
       gap: 2px;
-      font-size: 10px;
+      font-size: 9px;
+      color: #666;
     }
 
     .range-control input[type="range"] {
       flex: 1;
       min-width: 0;
-      height: 18px;
+      height: 12px;
       margin: 0;
+      cursor: pointer;
     }
 
     .topic-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: bold;
       color: #333;
-      margin-top: 2px;
-      margin-bottom: 1px;
+      margin-top: 1px;
+      line-height: 1.1;
     }
 
-    /* 平板及大螢幕（橫向自動併排） */
-    @media (min-width: 768px) {
+    /* 橫向螢幕/大螢幕直列佈局 */
+    @media (min-width: 600px) and (orientation: landscape), (min-width: 768px) {
       .app-container {
         flex-direction: row;
         align-items: center;
@@ -151,7 +183,6 @@
       .controls-container {
         flex: 1 1 40%;
         max-height: 100%;
-        overflow-y: auto;
       }
     }
   </style>
@@ -160,27 +191,27 @@
 <body>
 
   <div class="app-container">
-    <!-- 上方/左側繪圖區 -->
+    <!-- 繪圖區 -->
     <div class="canvas-container">
       <canvas id="myCanvas" width="640" height="585"></canvas>
     </div>
 
-    <!-- 下方/右側控制區 -->
+    <!-- 控制區 (強制緊貼不捲動) -->
     <div class="controls-container">
-      <!-- 播放控制按鈕 -->
-      <div class="btn-group">
+      <!-- 播放控制 -->
+      <div class="btn-group-main">
         <input type="button" id="play" value="開始" onclick="play()">
         <input type="button" id="pause" value="停止" onclick="pause()">
         <input type="button" id="stepback" value="<< 上一步" onclick="stepBack()">
         <input type="button" id="stepforward" value="下一步 >>" onclick="stepForward()">
-        <input type="button" id="reset" value="重設" onclick="reset()">
+        <input type="button" id="reset" value="重置" onclick="reset()">
       </div>
 
       <!-- 初始位置 X0 -->
       <div id="x1slider" class="slider-row">
         <div class="slider-label">位置 X₀:</div>
         <div id="initialx1Value" class="value-box">0</div>
-        <span style="font-size: 10px;">m</span>
+        <span class="unit-text">m</span>
         <div class="range-control">
           <span>-50</span>
           <input type="range" id="initialx1" min="-50" max="50" value="0" step="1" oninput="showx1Value(this.value)" onchange="showx1Value(this.value)">
@@ -192,7 +223,7 @@
       <div id="v1slider" class="slider-row">
         <div class="slider-label">速度 V:</div>
         <div id="initialv1Value" class="value-box">5</div>
-        <span style="font-size: 10px;">m/s</span>
+        <span class="unit-text">m/s</span>
         <div class="range-control">
           <span>-10</span>
           <input type="range" id="initialv1" min="-10" max="10" value="5" step="1" oninput="showv1Value(this.value)" onchange="showv1Value(this.value)">
@@ -204,7 +235,7 @@
       <div id="a1slider" class="slider-row">
         <div class="slider-label">加速度 a:</div>
         <div id="initiala1Value" class="value-box">0.0</div>
-        <span style="font-size: 10px;">m/s²</span>
+        <span class="unit-text">m/s²</span>
         <div class="range-control">
           <span>-2.0</span>
           <input type="range" id="initiala1" min="-2" max="2" value="0" step="0.1" oninput="showa1Value(this.value)" onchange="showa1Value(this.value)">
@@ -214,7 +245,7 @@
 
       <!-- 題目區 -->
       <div class="topic-title">X-t 題目:</div>
-      <div class="btn-group">
+      <div class="btn-grid-5">
         <input type="button" id="xgraph1" value="題1" onclick="setGraph(1)">
         <input type="button" id="xgraph2" value="題2" onclick="setGraph(2)">
         <input type="button" id="xgraph3" value="題3" onclick="setGraph(3)">
@@ -223,13 +254,13 @@
       </div>
 
       <div class="topic-title">V-t 題目與練習:</div>
-      <div class="btn-group">
+      <div class="btn-grid-6">
         <input type="button" id="vgraph1" value="題6" onclick="setGraph(6)">
         <input type="button" id="vgraph2" value="題7" onclick="setGraph(7)">
         <input type="button" id="vgraph3" value="題8" onclick="setGraph(8)">
         <input type="button" id="vgraph4" value="題9" onclick="setGraph(9)">
         <input type="button" id="vgraph5" value="題10" onclick="setGraph(10)">
-        <input type="button" id="nograph" value="自由練習" onclick="setGraph(11)">
+        <input type="button" id="nograph" value="自由" onclick="setGraph(11)">
       </div>
     </div>
   </div>
