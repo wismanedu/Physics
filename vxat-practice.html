@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-8175315-10"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'UA-8175315-10');
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>直線運動 速度/位置時間圖 練習</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: sans-serif;
+      font-size: 15px;
+      margin: 0;
+      padding: 15px;
+      background-color: #f4f4f9;
+    }
+
+    /* 主響應式容器 */
+    .app-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Canvas 區塊 */
+    .canvas-container {
+      flex: 1 1 640px;
+      max-width: 680px;
+      display: flex;
+      justify-content: center;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      max-width: 640px;
+      background-color: #ffd;
+      border: 1px solid #ccc;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+
+    /* 控制與題目區域 */
+    .controls-container {
+      flex: 1 1 400px;
+      max-width: 600px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 4px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    input[type="button"] {
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #999;
+      background-color: #f0f0f0;
+      transition: background 0.2s;
+    }
+
+    input[type="button"]:hover {
+      background-color: #e0e0e0;
+    }
+
+    /* 滑塊區域 Grid 佈局 */
+    .slider-row {
+      display: grid;
+      grid-template-columns: 110px 65px 50px 1fr;
+      align-items: center;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+
+    .value-box {
+      font-weight: bold;
+      font-size: 18px;
+      border: 2px solid #333;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: #fff;
+      text-align: center;
+    }
+
+    .unit-text {
+      font-weight: bold;
+      padding-left: 4px;
+    }
+
+    .range-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .range-control input[type="range"] {
+      flex: 1;
+    }
+
+    .copyright {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <div class="canvas-container">
+      <canvas id="myCanvas" width="640" height="585"></canvas>
+    </div>
+
+    <div class="controls-container">
+      <div class="section-title">一、控制按鈕</div>
+      <div class="btn-group">
+        <input type="button" id="play" value="開始" onclick="play()">
+        <input type="button" id="pause" value="停止" onclick="pause()">
+        <input type="button" id="stepback" value="<< 上一步" onclick="stepBack()">
+        <input type="button" id="stepforward" value="下一步 >>" onclick="stepForward()">
+        <input type="button" id="reset" value="重設" onclick="reset()">
+      </div>
+
+      <!-- 初始位置 X0 -->
+      <div id="x1slider" class="slider-row">
+        <div>初始位置 X₀:</div>
+        <div id="initialx1Value" class="value-box">0</div>
+        <div class="unit-text">m</div>
+        <div class="range-control">
+          <span>-50</span>
+          <input type="range" id="initialx1" min="-50" max="50" value="0" step="1" oninput="showx1Value(this.value)" onchange="showx1Value(this.value)">
+          <span>+50</span>
+        </div>
+      </div>
+
+      <!-- 速度 V -->
+      <div id="v1slider" class="slider-row">
+        <div>速度 V:</div>
+        <div id="initialv1Value" class="value-box">5</div>
+        <div class="unit-text">m/s</div>
+        <div class="range-control">
+          <span>-10</span>
+          <input type="range" id="initialv1" min="-10" max="10" value="5" step="1" oninput="showv1Value(this.value)" onchange="showv1Value(this.value)">
+          <span>10</span>
+        </div>
+      </div>
+
+      <!-- 加速度 a -->
+      <div id="a1slider" class="slider-row">
+        <div>加速度 a:</div>
+        <div id="initiala1Value" class="value-box">0.0</div>
+        <div class="unit-text">m/s²</div>
+        <div class="range-control">
+          <span>-2.0</span>
+          <input type="range" id="initiala1" min="-2" max="2" value="0" step="0.1" oninput="showa1Value(this.value)" onchange="showa1Value(this.value)">
+          <span>2.0</span>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top: 20px;">二、題目區</div>
+      <div>找出符合以下 <strong>位置-時間 圖</strong> 的運動方式:</div>
+      <div class="btn-group" style="margin-top: 5px;">
+        <input type="button" id="xgraph1" value="題目 1" onclick="setGraph(1)">
+        <input type="button" id="xgraph2" value="題目 2" onclick="setGraph(2)">
+        <input type="button" id="xgraph3" value="題目 3" onclick="setGraph(3)">
+        <input type="button" id="xgraph4" value="題目 4" onclick="setGraph(4)">
+        <input type="button" id="xgraph5" value="題目 5" onclick="setGraph(5)">
+      </div>
+
+      <div>找出符合以下 <strong>速度-時間 圖</strong> 的運動方式:</div>
+      <div class="btn-group" style="margin-top: 5px;">
+        <input type="button" id="vgraph1" value="題目 6" onclick="setGraph(6)">
+        <input type="button" id="vgraph2" value="題目 7" onclick="setGraph(7)">
+        <input type="button" id="vgraph3" value="題目 8" onclick="setGraph(8)">
+        <input type="button" id="vgraph4" value="題目 9" onclick="setGraph(9)">
+        <input type="button" id="vgraph5" value="題目 10" onclick="setGraph(10)">
+      </div>
+
+      <div>自由練習:</div>
+      <div class="btn-group" style="margin-top: 5px;">
+        <input type="button" id="nograph" value="自由練習" onclick="setGraph(11)">
+      </div>
+
+      <div class="copyright">
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br>
+        This work by Andrew Duffy is licensed under a CC BY-NC-SA 4.0.<br>
+        Simulation source: <a href="http://physics.bu.edu/~duffy/classroom.html">http://physics.bu.edu/~duffy/classroom.html</a>.<br>
+        Modify and translate by 蘇睿智@東興國中
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showx1Value(newx1Value) {
+      var display = document.getElementById("initialx1Value");
+      display.innerHTML = newx1Value;
+      x1Init = Number(newx1Value);
+      reset();
+    }
+
+    function showv1Value(newv1Value) {
+      var display = document.getElementById("initialv1Value");
+      display.innerHTML = newv1Value;
+      v1 = Number(newv1Value);
+      if (index == 0) reset();
+    }
+
+    function showa1Value(newa1Value) {
+      var display = document.getElementById("initiala1Value");
+      a1 = Number(newa1Value);
+      display.innerHTML = a1.toFixed(1);
+      if (index == 0) reset();
+    }
+
+    function setGraph(newGraphValue) {
+      graphType = newGraphValue;
+
+      if (graphType == 1) {
+        graph1Title = '位置時間圖 X-t : 題目 1';
+        graph2Title = '速度時間圖 V-t';
+        match[1].x1 = 0; match[1].y1 = 50; match[1].x2 = 100; match[1].y2 = 50;
+        match[1].x3 = 200; match[1].y3 = 50; match[1].x4 = match[1].x3; match[1].y4 = match[1].y3;
+        match[1].increment = 2; match[1].stopTime = 20;
+      }
+      if (graphType == 2) {
+        graph1Title = '位置時間圖 X-t : 題目 2';
+        graph2Title = '速度時間圖 V-t';
+        match[2].x1 = 0; match[2].y1 = 0; match[2].x2 = 100; match[2].y2 = 50;
+        match[2].x3 = 200; match[2].y3 = 100; match[2].x4 = match[2].x3; match[2].y4 = match[2].y3;
+        match[2].increment = 2; match[2].stopTime = 20;
+      }
+      if (graphType == 3) {
+        graph1Title = '位置時間圖 X-t : 題目 3';
+        graph2Title = '速度時間圖 V-t';
+        match[3].x1 = 0; match[3].y1 = -50; match[3].x2 = 100; match[3].y2 = -50;
+        match[3].x3 = 200; match[3].y3 = 50; match[3].x4 = match[3].x3; match[3].y4 = match[3].y3;
+        match[3].increment = 2; match[3].stopTime = 20;
+      }
+      if (graphType == 4) {
+        graph1Title = '位置時間圖 X-t : 題目 4';
+        graph2Title = '速度時間圖 V-t';
+        match[4].x1 = 0; match[4].y1 = 0; match[4].x2 = 100; match[4].y2 = 50;
+        match[4].x3 = 200; match[4].y3 = -50; match[4].x4 = match[4].x3; match[4].y4 = match[4].y3;
+        match[4].increment = 2; match[4].stopTime = 20;
+      }
+      if (graphType == 5) {
+        graph1Title = '位置時間圖 X-t : 題目 5';
+        graph2Title = '速度時間圖 V-t';
+        match[5].x1 = 0; match[5].y1 = 50; match[5].x2 = 100; match[5].y2 = 20;
+        match[5].x3 = 200; match[5].y3 = 20; match[5].x4 = match[5].x3; match[5].y4 = match[5].y3;
+        match[5].increment = 2; match[5].stopTime = 20;
+      }
+      if (graphType == 6) {
+        graph1Title = '位置時間圖 X-t';
+        graph2Title = '速度時間圖 V-t : 題目 6';
+        match[6].x1 = 0; match[6].y1 = 5; match[6].x2 = 100; match[6].y2 = 5;
+        match[6].x3 = 200; match[6].y3 = 5; match[6].x4 = match[6].x3; match[6].y4 = match[6].y3;
+        match[6].increment = 2; match[6].stopTime = 20;
+      }
+      if (graphType == 7) {
+        graph1Title = '位置時間圖 X-t';
+        graph2Title = '速度時間圖 V-t : 題目 7';
+        match[7].x1 = 0; match[7].y1 = -5; match[7].x2 = 100; match[7].y2 = 0;
+        match[7].x3 = 200; match[7].y3 = 5; match[7].x4 = match[7].x3; match[7].y4 = match[7].y3;
+        match[7].increment = 2; match[7].stopTime = 20;
+      }
+      if (graphType == 8) {
+        graph1Title = '位置時間圖 X-t';
+        graph2Title = '速度時間圖 V-t : 題目 8';
+        match[8].x1 = 0; match[8].y1 = 10; match[8].x2 = 100; match[8].y2 = 0;
+        match[8].x3 = 200; match[8].y3 = -10; match[8].x4 = match[8].x3; match[8].y4 = match[8].y3;
+        match[8].increment = 2; match[8].stopTime = 20;
+      }
+      if (graphType == 9) {
+        graph1Title = '位置時間圖 X-t';
+        graph2Title = '速度時間圖 V-t : 題目 9';
+        match[9].x1 = 0; match[9].y1 = 0; match[9].x2 = 50; match[9].y2 = 5;
+        match[9].x3 = 200; match[9].y3 = 5; match[9].x4 = match[9].x3; match[9].y4 = match[9].y3;
+        match[9].increment = 2; match[9].stopTime = 20;
+      }
+      if (graphType == 10) {
+        graph1Title = '位置時間圖 X-t';
+        graph2Title = '速度時間圖 V-t : 題目 10';
+        match[10].x1 = 0; match[10].y1 = 10; match[10].x2 = 80; match[10].y2 = 10;
+        match[10].x3 = 80; match[10].y3 = -5; match[10].x4 = 200; match[10].y4 = -5;
+        match[10].increment = 2; match[10].stopTime = 20;
+      }
+      if (graphType == 11) {
+        graph1Title = '位置時間圖 X-t';
+        graph2Title = '速度時間圖 V-t';
+        match[11].increment = 2; match[11].stopTime = 50;
+      }
+
+      reset();
+    }
+
+    function play() {
+      window.clearTimeout(timer);
+      deltaT = Math.abs(deltaT);
+      runFlag = 1;
+      runMotion();
+    }
+
+    function pause() {
+      window.clearTimeout(timer);
+      runFlag = 0;
+    }
+
+    function stepForward() {
+      window.clearTimeout(timer);
+      deltaT = Math.abs(deltaT);
+      runFlag = 1;
+      drawMotion();
+    }
+
+    function stepBack() {
+      window.clearTimeout(timer);
+      index = index - 2;
+      if (index < -1) index = -1;
+      time = index / 20;
+      if (x1 >= (xBase + 400)) x1 = xBase;
+      deltaT = -Math.abs(deltaT);
+      runFlag = 1;
+      drawMotion();
+    }
+
+    function reset() {
+      window.clearTimeout(timer);
+      index = -1;
+      time = 0.0;
+      deltaT = Math.abs(deltaT);
+      xIncrement = match[graphType].increment;
+      x1 = x1Init;
+      xPos[0] = x1Init;
+      var temp = document.getElementById("initialv1");
+      velocity[0] = Number(temp.value);
+      v1 = velocity[0];
+      y2Increment = 10;
+      y1Increment = 100;
+      y1Offset = 100;
+
+      runFlag = 1;
+      drawMotion();
+    }
+
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext("2d");
+    var index = -1;
+
+    // Y座標佈局（整體往下推，頂部留給水平X數線）
+    var yTopAxis = 65;   // 頂部水平 x 數線
+    var yBase1 = 160;    // X-t 圖頂部
+    var yBase2 = 415;    // V-t 圖頂部
+    var xBase2 = 180;    // X-t & V-t 圖表左邊界
+    var xBase = xBase2 + 200; // 水平數線的原點 (x=0) 垂直對齊 400px 寬的中點
+
+    var graphType = 11;
+    var simTitle = '先點選頁面底部的題目';
+    var graph1Title = '位置時間圖 X-t';
+    var graph2Title = '速度時間圖 V-t';
+    var graph3Title = '實際運動 (頂部與左側)';
+
+    var yAxis1Title = 'x (m)';
+    var yAxis2Title = 'v (m/s)';
+
+    var slope = 0.4;
+    var y1Increment = 100;
+    var y2Increment = 10;
+    var y1Offset = 100;
+
+    var xIncrement = 2;
+    var yNumDecimals = 0;
+
+    var radius = 6;
+    var x1Init = 0;
+    var x1 = 0.0;
+    var v1 = 5.0;
+    var a1 = 0.0;
+    var time = 0.0;
+    var deltaT = 1 / 20.0;
+    var timer;
+    var runFlag = 1;
+    var maxIndex = 401;
+    var xPos = new Array(maxIndex);
+    xPos[0] = x1Init;
+    var velocity = new Array(maxIndex);
+    velocity[0] = v1;
+
+    for (var i = 1; i < maxIndex; i++) {
+      xPos[i] = 0;
+      velocity[i] = 0;
+    }
+    var match = new Array(12);
+    for (var i = 0; i < 12; i++) {
+      match[i] = {};
+      match[i].x1 = 0; match[i].y1 = 50;
+      match[i].x2 = 100; match[i].y2 = 50;
+      match[i].x3 = 200; match[i].y3 = 50;
+      match[i].x4 = match[i].x3; match[i].y4 = match[i].y3;
+      match[i].increment = 2; match[i].stopTime = 20;
+    }
+
+    drawMotion();
+
+    function drawMotion() {
+      if ((x1 >= 100.0) || (x1 < (-100.0)) || (time >= 50) || (time >= match[graphType].stopTime)) runFlag = 0;
+
+      if (time > 20.0) xIncrement = 5.0;
+
+      if (runFlag == 1) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        index = index + 1;
+
+        if (Math.abs(v1) > 10.0) y2Increment = 20;
+        if (Math.abs(v1) > 20.0) y2Increment = 30;
+
+        // 全域背景
+        context.fillStyle = "#ffd";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 圖表背景
+        context.fillStyle = "#eff";
+        context.fillRect(xBase2, yBase1, 400, 200);
+        context.fillRect(xBase2, yBase2, 400, 80);
+
+        context.strokeStyle = '#999';
+        context.lineWidth = 2;
+
+        var axisLabel = '';
+        var axisValue = 0;
+
+        // 垂直網格線 - 圖1 (X-t)
+        for (var i = 0; i <= 20; i++) {
+          context.beginPath();
+          context.moveTo(xBase2 + 20 * i, yBase1);
+          context.lineTo(xBase2 + 20 * i, yBase1 + 210);
+          context.stroke();
+          context.font = '14pt Calibri';
+          context.fillStyle = 'black';
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          axisValue = xIncrement * i / 2;
+          axisLabel = axisValue.toFixed(0);
+          if (i == 2 * Math.trunc(i / 2)) context.fillText(axisLabel, xBase2 + 20 * i, yBase1 + 220);
+        }
+
+        // 垂直網格線 - 圖2 (V-t)
+        for (var i = 0; i <= 20; i++) {
+          context.beginPath();
+          context.moveTo(xBase2 + 20 * i, yBase2);
+          context.lineTo(xBase2 + 20 * i, yBase2 + 90);
+          context.stroke();
+          context.font = '14pt Calibri';
+          context.fillStyle = 'black';
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          axisValue = xIncrement * i / 2;
+          axisLabel = axisValue.toFixed(0);
+          if (i == 2 * Math.trunc(i / 2)) context.fillText(axisLabel, xBase2 + 20 * i, yBase2 + 100);
+        }
+
+        // 水平網格線 - 圖1 (X-t)
+        for (i = 0; i <= 10; i++) {
+          context.beginPath();
+          context.moveTo(xBase2 - 10, yBase1 + 20 * i);
+          context.lineTo(xBase2 + 400, yBase1 + 20 * i);
+          context.stroke();
+          context.font = '12pt Calibri';
+          context.fillStyle = 'black';
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          axisValue = y1Increment * (1 - i / 5);
+          axisLabel = axisValue.toFixed(yNumDecimals);
+          context.fillText(axisLabel, xBase2 - 24, yBase1 + 20 * i);
+        }
+
+        // 水平網格線 - 圖2 (V-t)
+        for (i = 0; i <= 4; i++) {
+          context.beginPath();
+          context.moveTo(xBase2 - 10, yBase2 + 20 * i);
+          context.lineTo(xBase2 + 400, yBase2 + 20 * i);
+          context.stroke();
+          context.font = '14pt Calibri';
+          context.fillStyle = 'black';
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          axisValue = y2Increment * (1 - i / 2);
+          axisLabel = axisValue.toFixed(yNumDecimals);
+          if (i == 2 * Math.trunc(i / 2)) context.fillText(axisLabel, xBase2 - 24, yBase2 + 20 * i);
+        }
+
+        // t-axis (X-t)
+        context.strokeStyle = '#000';
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(xBase2 - 1, yBase1 + 100);
+        context.lineTo(xBase2 + 420, yBase1 + 100);
+        context.stroke();
+        context.moveTo(xBase2 + 410, yBase1 + 100 - 6);
+        context.lineTo(xBase2 + 420, yBase1 + 100);
+        context.lineTo(xBase2 + 410, yBase1 + 100 + 6);
+        context.lineJoin = 'miter';
+        context.stroke();
+        context.font = '16pt Calibri';
+        context.fillStyle = 'black';
+        context.textAlign = 'left';
+        context.fillText('t (s)', xBase2 + 428, yBase1 + 100);
+
+        // t-axis (V-t)
+        context.strokeStyle = '#000';
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(xBase2 - 1, yBase2 + 40);
+        context.lineTo(xBase2 + 420, yBase2 + 40);
+        context.stroke();
+        context.moveTo(xBase2 + 410, yBase2 + 40 - 6);
+        context.lineTo(xBase2 + 420, yBase2 + 40);
+        context.lineTo(xBase2 + 410, yBase2 + 40 + 6);
+        context.lineJoin = 'miter';
+        context.stroke();
+        context.font = '16pt Calibri';
+        context.fillStyle = 'black';
+        context.textAlign = 'left';
+        context.fillText('t (sec)', xBase2 + 428, yBase2 + 40);
+
+        // y-axis 標題
+        context.strokeStyle = '#000';
+        context.beginPath();
+        context.moveTo(xBase2, yBase1 - 20);
+        context.lineTo(xBase2, yBase1 + 200);
+        context.stroke();
+        context.moveTo(xBase2 - 6, yBase1 - 10);
+        context.lineTo(xBase2, yBase1 - 20);
+        context.lineTo(xBase2 + 6, yBase1 - 10);
+        context.stroke();
+        context.textAlign = 'center';
+        context.fillText(yAxis1Title, xBase2 - 50, yBase1 - 20);
+
+        context.beginPath();
+        context.moveTo(xBase2, yBase2 - 20);
+        context.lineTo(xBase2, yBase2 + 80);
+        context.stroke();
+        context.moveTo(xBase2 - 6, yBase2 - 10);
+        context.lineTo(xBase2, yBase2 - 20);
+        context.lineTo(xBase2 + 6, yBase2 - 10);
+        context.stroke();
+        context.textAlign = 'center';
+        context.fillText(yAxis2Title, xBase2 - 50, yBase2 - 20);
+
+        /* --- 2. 頂部水平 x 數線繪製 (移至最上方 yTopAxis) --- */
+        context.strokeStyle = '#999';
+        context.lineWidth = 2;
+        for (var i = -10; i <= 10; i++) {
+          context.beginPath();
+          context.moveTo(xBase + 18 * i, yTopAxis - 10);
+          context.lineTo(xBase + 18 * i, yTopAxis + 10);
+          context.stroke();
+          context.font = '12pt Calibri';
+          context.fillStyle = 'black';
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+          axisValue = 10 * i;
+          if (i == 2 * Math.trunc(i / 2)) context.fillText(axisValue.toFixed(0), xBase + 18 * i, yTopAxis + 20);
+        }
+        // 頂部 x 軸線與箭頭
+        context.strokeStyle = '#000';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(xBase - 190, yTopAxis);
+        context.lineTo(xBase + 190, yTopAxis);
+        context.stroke();
+        context.moveTo(xBase + 182, yTopAxis - 5);
+        context.lineTo(xBase + 190, yTopAxis);
+        context.lineTo(xBase + 182, yTopAxis + 5);
+        context.stroke();
+        context.font = '14pt Calibri';
+        context.fillText('x (m)', xBase + 215, yTopAxis);
+
+        /* --- 3. 最左側垂直 x 數線繪製 (立起來 90 度，對齊 X-t 圖表) --- */
+        var xLeftVert = 60; // 最左側數線 X 座標
+        context.strokeStyle = '#999';
+        context.lineWidth = 2;
+        for (var i = 0; i <= 10; i++) {
+          var yPosCur = yBase1 + 20 * i;
+          context.beginPath();
+          context.moveTo(xLeftVert - 8, yPosCur);
+          context.lineTo(xLeftVert + 8, yPosCur);
+          context.stroke();
+          context.font = '12pt Calibri';
+          context.fillStyle = 'black';
+          context.textAlign = 'right';
+          context.textBaseline = 'middle';
+          var val = 100 - i * 20;
+          context.fillText(val.toString(), xLeftVert - 12, yPosCur);
+        }
+        // 垂直 x 軸線與雙向箭頭
+        context.strokeStyle = '#000';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(xLeftVert, yBase1 - 15);
+        context.lineTo(xLeftVert, yBase1 + 215);
+        context.stroke();
+        // 向上箭頭
+        context.moveTo(xLeftVert - 5, yBase1 - 8);
+        context.lineTo(xLeftVert, yBase1 - 15);
+        context.lineTo(xLeftVert + 5, yBase1 - 8);
+        context.stroke();
+        context.font = '14pt Calibri';
+        context.textAlign = 'center';
+        context.fillText('x (m)', xLeftVert, yBase1 - 25);
+
+        /* --- 計算物理位置與繪製運動質點 --- */
+        time = index / 20.0;
+
+        if (index > 0) {
+          var vAve = v1;
+          v1 = v1 + a1 * deltaT;
+          vAve = (vAve + v1) / 2.0;
+          x1 = x1 + vAve * deltaT;
+          xPos[index] = x1;
+          velocity[index] = v1;
+
+          // 1. 頂部水平運動殘影與主點
+          context.fillStyle = '#0cf';
+          context.strokeStyle = '#000';
+          context.lineWidth = 1;
+          for (var i = 0; i < index; i = i + 20) {
+            context.beginPath();
+            context.arc(xBase + 1.8 * xPos[i], yTopAxis, radius / 2, 0, 2 * Math.PI, false);
+            context.fill();
+            context.stroke();
+          }
+          context.beginPath();
+          context.arc(xBase + 1.8 * xPos[index], yTopAxis, radius, 0, 2 * Math.PI, false);
+          context.fill();
+          context.stroke();
+
+          // 2. 左側垂直運動殘影與主點 (與 X-t 完美水平對齊)
+          var currentYOnGraph = yBase1 + y1Offset - (100 / y1Increment) * xPos[index];
+          context.fillStyle = '#0cf';
+          for (var i = 0; i < index; i = i + 20) {
+            var ghostY = yBase1 + y1Offset - (100 / y1Increment) * xPos[i];
+            context.beginPath();
+            context.arc(xLeftVert, ghostY, radius / 2, 0, 2 * Math.PI, false);
+            context.fill();
+            context.stroke();
+          }
+          context.beginPath();
+          context.arc(xLeftVert, currentYOnGraph, radius, 0, 2 * Math.PI, false);
+          context.fill();
+          context.stroke();
+
+        } else {
+          // 初始靜止點
+          context.fillStyle = '#0cf';
+          context.strokeStyle = '#000';
+          context.beginPath();
+          context.arc(xBase + 1.8 * xPos[0], yTopAxis, radius, 0, 2 * Math.PI, false);
+          context.fill();
+          context.stroke();
+
+          var initialYOnGraph = yBase1 + y1Offset - (100 / y1Increment) * xPos[0];
+          context.beginPath();
+          context.arc(xLeftVert, initialYOnGraph, radius, 0, 2 * Math.PI, false);
+          context.fill();
+          context.stroke();
+        }
+
+        // 繪製題目匹配目標線
+        context.strokeStyle = "#0f0";
+        context.lineWidth = 6;
+        context.beginPath();
+        if (graphType <= 5) {
+          context.moveTo(xBase2, yBase1 + y1Offset - (100 / y1Increment) * match[graphType].y1);
+          context.lineTo(xBase2 + 2 * match[graphType].x2, yBase1 + y1Offset - (100 / y1Increment) * match[graphType].y2);
+          context.lineTo(xBase2 + 2 * match[graphType].x3, yBase1 + y1Offset - (100 / y1Increment) * match[graphType].y3);
+          context.lineTo(xBase2 + 2 * match[graphType].x4, yBase1 + y1Offset - (100 / y1Increment) * match[graphType].y4);
+        }
+        else if (graphType <= 10) {
+          context.moveTo(xBase2, yBase2 + 40 - (40 / y2Increment) * match[graphType].y1);
+          context.lineTo(xBase2 + 2 * match[graphType].x2, yBase2 + 40 - (40 / y2Increment) * match[graphType].y2);
+          context.lineTo(xBase2 + 2 * match[graphType].x3, yBase2 + 40 - (40 / y2Increment) * match[graphType].y3);
+          context.lineTo(xBase2 + 2 * match[graphType].x4, yBase2 + 40 - (40 / y2Increment) * match[graphType].y4);
+        }
+        context.stroke();
+
+        // 繪製 X-t 軌跡曲線
+        context.strokeStyle = "red";
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(xBase2, yBase1 + y1Offset - (100 / y1Increment) * xPos[0]);
+        for (var ival = 1; ival <= index; ival++) {
+          context.lineTo(xBase2 + 2 * ival / xIncrement, yBase1 + y1Offset - (100 / y1Increment) * xPos[ival]);
+        }
+        context.stroke();
+
+        context.beginPath();
+        context.arc(xBase2 + 2 * index / xIncrement, yBase1 + y1Offset - (100 / y1Increment) * xPos[index], radius, 0, 2 * Math.PI, false);
+        context.fillStyle = "red";
+        context.fill();
+        context.lineWidth = 2;
+        context.strokeStyle = '#000000';
+        context.stroke();
+
+        // 繪製 V-t 軌跡曲線
+        context.strokeStyle = "red";
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(xBase2, yBase2 + 40 - (40 / y2Increment) * velocity[0]);
+        for (var ival = 1; ival <= index; ival++) {
+          context.lineTo(xBase2 + 2 * ival / xIncrement, yBase2 + 40 - (40 / y2Increment) * velocity[ival]);
+        }
+        context.stroke();
+
+        context.beginPath();
+        context.arc(xBase2 + 2 * index / xIncrement, yBase2 + 40 - (40 / y2Increment) * velocity[index], radius, 0, 2 * Math.PI, false);
+        context.fillStyle = "red";
+        context.fill();
+        context.lineWidth = 2;
+        context.strokeStyle = '#000000';
+        context.stroke();
+
+        // Canvas 頂部與各圖標題文字
+        context.font = 'bold 16pt Calibri';
+        context.fillStyle = 'purple';
+        context.textAlign = 'center';
+        context.fillText(simTitle, canvas.width / 2, 22);
+
+        context.font = '15pt Calibri';
+        context.fillStyle = 'black';
+        context.fillText(graph1Title, xBase2 + 200, yBase1 - 15);
+        context.fillText(graph2Title, xBase2 + 200, yBase2 - 15);
+
+        // 底部數據顯示
+        var infoY = 565;
+        context.font = '14pt Calibri';
+        var timeLabel = 't = ' + time.toFixed(2) + ' s';
+        context.textAlign = 'left';
+        context.fillStyle = 'black';
+        context.fillText(timeLabel, xBase2 - 50, infoY);
+
+        context.fillStyle = 'red';
+        var xPosLabel = 'x = ' + xPos[index].toFixed(2) + ' m';
+        context.fillText(xPosLabel, xBase2 + 110, infoY);
+
+        var velocityLabel = 'v = ' + velocity[index].toFixed(2) + ' m/s';
+        context.fillText(velocityLabel, xBase2 + 270, infoY);
+      }
+    }
+
+    function runMotion() {
+      drawMotion();
+      if (runFlag == 1) {
+        timer = window.setTimeout(runMotion, 1000 / 30);
+      }
+    }
+  </script>
+</body>
+
+</html>
