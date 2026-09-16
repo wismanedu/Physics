@@ -24,8 +24,9 @@
       font-family: sans-serif;
       font-size: 15px;
       margin: 0;
-      padding: 15px;
+      padding: 10px;
       background-color: #f4f4f9;
+      overflow-x: hidden; /* 防止橫向滾動條 */
     }
 
     /* 主響應式容器 */
@@ -34,17 +35,19 @@
       flex-wrap: wrap;
       justify-content: center;
       align-items: flex-start;
-      gap: 20px;
+      gap: 15px;
+      width: 100%;
       max-width: 1400px;
       margin: 0 auto;
     }
 
     /* Canvas 區塊 */
     .canvas-container {
-      flex: 1 1 640px;
+      flex: 1 1 100%;
       max-width: 680px;
       display: flex;
       justify-content: center;
+      width: 100%;
     }
 
     canvas {
@@ -59,10 +62,11 @@
 
     /* 控制與題目區域 */
     .controls-container {
-      flex: 1 1 400px;
+      flex: 1 1 300px;
+      width: 100%;
       max-width: 600px;
       background: #ffffff;
-      padding: 20px;
+      padding: 15px;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
@@ -78,38 +82,40 @@
     .btn-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 15px;
     }
 
     input[type="button"] {
-      padding: 6px 12px;
+      padding: 6px 10px;
       font-size: 14px;
       cursor: pointer;
       border-radius: 4px;
       border: 1px solid #999;
       background-color: #f0f0f0;
       transition: background 0.2s;
+      flex: 0 1 auto;
     }
 
     input[type="button"]:hover {
       background-color: #e0e0e0;
     }
 
-    /* 滑塊區域 Grid 佈局 */
+    /* 滑塊區域桌面版網格佈局 */
     .slider-row {
       display: grid;
-      grid-template-columns: 110px 65px 50px 1fr;
+      grid-template-columns: 100px 55px 40px 1fr;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       text-align: left;
+      gap: 5px;
     }
 
     .value-box {
       font-weight: bold;
-      font-size: 18px;
+      font-size: 16px;
       border: 2px solid #333;
-      padding: 2px 6px;
+      padding: 2px 4px;
       border-radius: 4px;
       background-color: #fff;
       text-align: center;
@@ -117,17 +123,19 @@
 
     .unit-text {
       font-weight: bold;
-      padding-left: 4px;
+      padding-left: 2px;
     }
 
     .range-control {
       display: flex;
       align-items: center;
       gap: 6px;
+      width: 100%;
     }
 
     .range-control input[type="range"] {
       flex: 1;
+      min-width: 0; /* 防止滑塊撐破寬度 */
     }
 
     .copyright {
@@ -135,6 +143,44 @@
       font-size: 12px;
       color: #666;
       line-height: 1.4;
+      word-break: break-word;
+    }
+
+    /* 📱 手機板（小螢幕 480px 以下）優化適應 */
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+
+      .controls-container {
+        padding: 10px;
+      }
+
+      /* 滑塊控制改為兩列：第一列顯示名稱與數值，第二列滿寬滑塊 */
+      .slider-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 14px;
+        background: #f9f9f9;
+        padding: 8px;
+        border-radius: 6px;
+      }
+
+      .slider-row > div:nth-child(1) {
+        flex: 1;
+        font-weight: bold;
+      }
+
+      .range-control {
+        flex: 1 0 100%;
+        margin-top: 6px;
+      }
+
+      input[type="button"] {
+        padding: 8px 10px; /* 手機上按鈕好點擊 */
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -192,9 +238,9 @@
         </div>
       </div>
 
-      <div class="section-title" style="margin-top: 20px;">二、題目區</div>
-      <div>找出符合以下 <strong>位置-時間 圖</strong> 的運動方式:</div>
-      <div class="btn-group" style="margin-top: 5px;">
+      <div class="section-title" style="margin-top: 15px;">二、題目區</div>
+      <div style="margin-bottom: 5px;">找出符合以下 <strong>位置-時間 圖</strong> 的運動方式:</div>
+      <div class="btn-group">
         <input type="button" id="xgraph1" value="題目 1" onclick="setGraph(1)">
         <input type="button" id="xgraph2" value="題目 2" onclick="setGraph(2)">
         <input type="button" id="xgraph3" value="題目 3" onclick="setGraph(3)">
@@ -202,8 +248,8 @@
         <input type="button" id="xgraph5" value="題目 5" onclick="setGraph(5)">
       </div>
 
-      <div>找出符合以下 <strong>速度-時間 圖</strong> 的運動方式:</div>
-      <div class="btn-group" style="margin-top: 5px;">
+      <div style="margin-bottom: 5px;">找出符合以下 <strong>速度-時間 圖</strong> 的運動方式:</div>
+      <div class="btn-group">
         <input type="button" id="vgraph1" value="題目 6" onclick="setGraph(6)">
         <input type="button" id="vgraph2" value="題目 7" onclick="setGraph(7)">
         <input type="button" id="vgraph3" value="題目 8" onclick="setGraph(8)">
@@ -211,8 +257,8 @@
         <input type="button" id="vgraph5" value="題目 10" onclick="setGraph(10)">
       </div>
 
-      <div>自由練習:</div>
-      <div class="btn-group" style="margin-top: 5px;">
+      <div style="margin-bottom: 5px;">自由練習:</div>
+      <div class="btn-group">
         <input type="button" id="nograph" value="自由練習" onclick="setGraph(11)">
       </div>
 
@@ -382,12 +428,12 @@
     var context = canvas.getContext("2d");
     var index = -1;
 
-    // Y座標佈局（整體往下推，頂部留給水平X數線）
+    // Y座標佈局
     var yTopAxis = 65;   // 頂部水平 x 數線
     var yBase1 = 160;    // X-t 圖頂部
     var yBase2 = 415;    // V-t 圖頂部
     var xBase2 = 180;    // X-t & V-t 圖表左邊界
-    var xBase = xBase2 + 200; // 水平數線的原點 (x=0) 垂直對齊 400px 寬的中點
+    var xBase = xBase2 + 200; // 水平數線的原點 (x=0)
 
     var graphType = 11;
     var simTitle = '先點選頁面底部的題目';
@@ -582,7 +628,7 @@
         context.textAlign = 'center';
         context.fillText(yAxis2Title, xBase2 - 50, yBase2 - 20);
 
-        /* --- 2. 頂部水平 x 數線繪製 (移至最上方 yTopAxis) --- */
+        /* --- 頂部水平 x 數線 --- */
         context.strokeStyle = '#999';
         context.lineWidth = 2;
         for (var i = -10; i <= 10; i++) {
@@ -597,7 +643,6 @@
           axisValue = 10 * i;
           if (i == 2 * Math.trunc(i / 2)) context.fillText(axisValue.toFixed(0), xBase + 18 * i, yTopAxis + 20);
         }
-        // 頂部 x 軸線與箭頭
         context.strokeStyle = '#000';
         context.lineWidth = 3;
         context.beginPath();
@@ -611,8 +656,8 @@
         context.font = '14pt Calibri';
         context.fillText('x (m)', xBase + 215, yTopAxis);
 
-        /* --- 3. 最左側垂直 x 數線繪製 (立起來 90 度，對齊 X-t 圖表) --- */
-        var xLeftVert = 60; // 最左側數線 X 座標
+        /* --- 左側垂直 x 數線 --- */
+        var xLeftVert = 60;
         context.strokeStyle = '#999';
         context.lineWidth = 2;
         for (var i = 0; i <= 10; i++) {
@@ -628,14 +673,12 @@
           var val = 100 - i * 20;
           context.fillText(val.toString(), xLeftVert - 12, yPosCur);
         }
-        // 垂直 x 軸線與雙向箭頭
         context.strokeStyle = '#000';
         context.lineWidth = 3;
         context.beginPath();
         context.moveTo(xLeftVert, yBase1 - 15);
         context.lineTo(xLeftVert, yBase1 + 215);
         context.stroke();
-        // 向上箭頭
         context.moveTo(xLeftVert - 5, yBase1 - 8);
         context.lineTo(xLeftVert, yBase1 - 15);
         context.lineTo(xLeftVert + 5, yBase1 - 8);
@@ -655,7 +698,7 @@
           xPos[index] = x1;
           velocity[index] = v1;
 
-          // 1. 頂部水平運動殘影與主點
+          // 1. 頂部水平運動點
           context.fillStyle = '#0cf';
           context.strokeStyle = '#000';
           context.lineWidth = 1;
@@ -670,7 +713,7 @@
           context.fill();
           context.stroke();
 
-          // 2. 左側垂直運動殘影與主點 (與 X-t 完美水平對齊)
+          // 2. 左側垂直運動點
           var currentYOnGraph = yBase1 + y1Offset - (100 / y1Increment) * xPos[index];
           context.fillStyle = '#0cf';
           for (var i = 0; i < index; i = i + 20) {
@@ -686,7 +729,6 @@
           context.stroke();
 
         } else {
-          // 初始靜止點
           context.fillStyle = '#0cf';
           context.strokeStyle = '#000';
           context.beginPath();
@@ -701,7 +743,7 @@
           context.stroke();
         }
 
-        // 繪製題目匹配目標線
+        // 題目目標線
         context.strokeStyle = "#0f0";
         context.lineWidth = 6;
         context.beginPath();
@@ -719,7 +761,7 @@
         }
         context.stroke();
 
-        // 繪製 X-t 軌跡曲線
+        // 繪製 X-t 軌跡
         context.strokeStyle = "red";
         context.lineWidth = 4;
         context.beginPath();
@@ -737,7 +779,7 @@
         context.strokeStyle = '#000000';
         context.stroke();
 
-        // 繪製 V-t 軌跡曲線
+        // 繪製 V-t 軌跡
         context.strokeStyle = "red";
         context.lineWidth = 4;
         context.beginPath();
@@ -755,7 +797,7 @@
         context.strokeStyle = '#000000';
         context.stroke();
 
-        // Canvas 頂部與各圖標題文字
+        // 標題與文字
         context.font = 'bold 16pt Calibri';
         context.fillStyle = 'purple';
         context.textAlign = 'center';
@@ -766,7 +808,7 @@
         context.fillText(graph1Title, xBase2 + 200, yBase1 - 15);
         context.fillText(graph2Title, xBase2 + 200, yBase2 - 15);
 
-        // 底部數據顯示
+        // 數據顯示
         var infoY = 565;
         context.font = '14pt Calibri';
         var timeLabel = 't = ' + time.toFixed(2) + ' s';
