@@ -16,27 +16,27 @@
       height: 100%;
       height: 100dvh;
       margin: 0;
-      padding: 6px;
+      padding: 2px; /* 降至最低外距 */
       font-family: sans-serif;
-      font-size: 13px;
+      font-size: 12px;
       background-color: #f4f4f9;
-      overflow: hidden; /* 強制消除捲動軸 */
+      overflow: hidden; /* 徹底杜絕上下捲動軸 */
     }
 
-    /* 主響應式容器 - 垂直填滿 100% */
+    /* 主響應式容器 */
     .app-container {
       display: flex;
       flex-direction: column;
       height: 100%;
       max-width: 800px;
       margin: 0 auto;
-      gap: 6px;
+      gap: 2px; /* 極小化組件間距 */
     }
 
-    /* Canvas 區塊 - 自動分配剩餘最大高度 */
+    /* Canvas 區塊 - 自動彈性分配剩餘高度 */
     .canvas-container {
       flex: 1 1 auto;
-      min-height: 0; /* 關鍵：允許 Canvas 隨螢幕縮小 */
+      min-height: 0;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -47,36 +47,38 @@
       max-height: 100%;
       width: auto;
       height: auto;
-      aspect-ratio: 640 / 585; /* 保持原本最佳比例 */
+      aspect-ratio: 640 / 585;
       background-color: #ffd;
       border: 1px solid #ccc;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-radius: 4px;
       object-fit: contain;
     }
 
-    /* 控制與題目區域 - 固定在下方 */
+    /* 控制與題目區域 - 極致緊湊 */
     .controls-container {
       flex: 0 0 auto;
       background: #ffffff;
-      padding: 8px 10px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 4px 6px; /* 最小化區塊內距 */
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .btn-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 4px;
+      gap: 2px; /* 按鈕間僅留極小間距 */
+      margin-bottom: 2px;
     }
 
+    /* 按鈕樣式：邊框貼合文字 */
     input[type="button"] {
-      padding: 4px 8px;
+      padding: 1px 3px; /* 緊貼內字 */
       font-size: 12px;
+      line-height: 1.2;
       cursor: pointer;
-      border-radius: 4px;
-      border: 1px solid #999;
+      border-radius: 3px;
+      border: 1px solid #888;
       background-color: #f0f0f0;
       touch-action: manipulation;
     }
@@ -85,31 +87,31 @@
       background-color: #ddd;
     }
 
-    /* 滑塊控製區塊緊湊化 */
+    /* 滑塊列緊湊化 */
     .slider-row {
       display: flex;
       align-items: center;
-      gap: 6px;
-      margin-bottom: 4px;
+      gap: 4px;
+      margin-bottom: 2px;
       background: #f8f9fa;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 1px 4px;
+      border-radius: 3px;
     }
 
     .slider-label {
-      width: 75px;
+      width: 65px;
       font-weight: bold;
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .value-box {
       font-weight: bold;
-      font-size: 13px;
-      border: 1px solid #333;
-      padding: 1px 4px;
-      border-radius: 3px;
+      font-size: 11px;
+      border: 1px solid #555;
+      padding: 0 2px;
+      border-radius: 2px;
       background-color: #fff;
-      min-width: 38px;
+      min-width: 32px;
       text-align: center;
     }
 
@@ -117,25 +119,26 @@
       flex: 1;
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 11px;
+      gap: 2px;
+      font-size: 10px;
     }
 
     .range-control input[type="range"] {
       flex: 1;
       min-width: 0;
-      height: 24px;
+      height: 18px;
+      margin: 0;
     }
 
     .topic-title {
       font-size: 11px;
       font-weight: bold;
-      color: #444;
+      color: #333;
       margin-top: 2px;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
     }
 
-    /* 平板及大螢幕（橫向時自動左右併排） */
+    /* 平板及大螢幕（橫向自動併排） */
     @media (min-width: 768px) {
       .app-container {
         flex-direction: row;
@@ -177,7 +180,7 @@
       <div id="x1slider" class="slider-row">
         <div class="slider-label">位置 X₀:</div>
         <div id="initialx1Value" class="value-box">0</div>
-        <span style="font-size: 11px;">m</span>
+        <span style="font-size: 10px;">m</span>
         <div class="range-control">
           <span>-50</span>
           <input type="range" id="initialx1" min="-50" max="50" value="0" step="1" oninput="showx1Value(this.value)" onchange="showx1Value(this.value)">
@@ -189,7 +192,7 @@
       <div id="v1slider" class="slider-row">
         <div class="slider-label">速度 V:</div>
         <div id="initialv1Value" class="value-box">5</div>
-        <span style="font-size: 11px;">m/s</span>
+        <span style="font-size: 10px;">m/s</span>
         <div class="range-control">
           <span>-10</span>
           <input type="range" id="initialv1" min="-10" max="10" value="5" step="1" oninput="showv1Value(this.value)" onchange="showv1Value(this.value)">
@@ -201,7 +204,7 @@
       <div id="a1slider" class="slider-row">
         <div class="slider-label">加速度 a:</div>
         <div id="initiala1Value" class="value-box">0.0</div>
-        <span style="font-size: 11px;">m/s²</span>
+        <span style="font-size: 10px;">m/s²</span>
         <div class="range-control">
           <span>-2.0</span>
           <input type="range" id="initiala1" min="-2" max="2" value="0" step="0.1" oninput="showa1Value(this.value)" onchange="showa1Value(this.value)">
@@ -388,12 +391,11 @@
     var context = canvas.getContext("2d");
     var index = -1;
 
-    // Y座標佈局
-    var yTopAxis = 65;   // 頂部水平 x 數線
-    var yBase1 = 160;    // X-t 圖頂部
-    var yBase2 = 415;    // V-t 圖頂部
-    var xBase2 = 180;    // X-t & V-t 圖表左邊界
-    var xBase = xBase2 + 200; // 水平數線的原點 (x=0)
+    var yTopAxis = 65;
+    var yBase1 = 160;
+    var yBase2 = 415;
+    var xBase2 = 180;
+    var xBase = xBase2 + 200;
 
     var graphType = 11;
     var simTitle = '先點選頁面底部的題目';
@@ -454,11 +456,9 @@
         if (Math.abs(v1) > 10.0) y2Increment = 20;
         if (Math.abs(v1) > 20.0) y2Increment = 30;
 
-        // 全域背景
         context.fillStyle = "#ffd";
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 圖表背景
         context.fillStyle = "#eff";
         context.fillRect(xBase2, yBase1, 400, 200);
         context.fillRect(xBase2, yBase2, 400, 80);
@@ -469,7 +469,6 @@
         var axisLabel = '';
         var axisValue = 0;
 
-        // 垂直網格線 - 圖1 (X-t)
         for (var i = 0; i <= 20; i++) {
           context.beginPath();
           context.moveTo(xBase2 + 20 * i, yBase1);
@@ -484,7 +483,6 @@
           if (i == 2 * Math.trunc(i / 2)) context.fillText(axisLabel, xBase2 + 20 * i, yBase1 + 220);
         }
 
-        // 垂直網格線 - 圖2 (V-t)
         for (var i = 0; i <= 20; i++) {
           context.beginPath();
           context.moveTo(xBase2 + 20 * i, yBase2);
@@ -499,7 +497,6 @@
           if (i == 2 * Math.trunc(i / 2)) context.fillText(axisLabel, xBase2 + 20 * i, yBase2 + 100);
         }
 
-        // 水平網格線 - 圖1 (X-t)
         for (i = 0; i <= 10; i++) {
           context.beginPath();
           context.moveTo(xBase2 - 10, yBase1 + 20 * i);
@@ -514,7 +511,6 @@
           context.fillText(axisLabel, xBase2 - 24, yBase1 + 20 * i);
         }
 
-        // 水平網格線 - 圖2 (V-t)
         for (i = 0; i <= 4; i++) {
           context.beginPath();
           context.moveTo(xBase2 - 10, yBase2 + 20 * i);
@@ -529,7 +525,6 @@
           if (i == 2 * Math.trunc(i / 2)) context.fillText(axisLabel, xBase2 - 24, yBase2 + 20 * i);
         }
 
-        // t-axis (X-t)
         context.strokeStyle = '#000';
         context.lineWidth = 4;
         context.beginPath();
@@ -546,7 +541,6 @@
         context.textAlign = 'left';
         context.fillText('t (s)', xBase2 + 428, yBase1 + 100);
 
-        // t-axis (V-t)
         context.strokeStyle = '#000';
         context.lineWidth = 4;
         context.beginPath();
@@ -563,7 +557,6 @@
         context.textAlign = 'left';
         context.fillText('t (sec)', xBase2 + 428, yBase2 + 40);
 
-        // y-axis 標題
         context.strokeStyle = '#000';
         context.beginPath();
         context.moveTo(xBase2, yBase1 - 20);
@@ -587,7 +580,6 @@
         context.textAlign = 'center';
         context.fillText(yAxis2Title, xBase2 - 50, yBase2 - 20);
 
-        /* --- 頂部水平 x 數線 --- */
         context.strokeStyle = '#999';
         context.lineWidth = 2;
         for (var i = -10; i <= 10; i++) {
@@ -615,7 +607,6 @@
         context.font = '14pt Calibri';
         context.fillText('x (m)', xBase + 215, yTopAxis);
 
-        /* --- 左側垂直 x 數線 --- */
         var xLeftVert = 60;
         context.strokeStyle = '#999';
         context.lineWidth = 2;
@@ -646,7 +637,6 @@
         context.textAlign = 'center';
         context.fillText('x (m)', xLeftVert, yBase1 - 25);
 
-        /* --- 計算物理位置與繪製運動質點 --- */
         time = index / 20.0;
 
         if (index > 0) {
@@ -657,7 +647,6 @@
           xPos[index] = x1;
           velocity[index] = v1;
 
-          // 1. 頂部水平運動點
           context.fillStyle = '#0cf';
           context.strokeStyle = '#000';
           context.lineWidth = 1;
@@ -672,7 +661,6 @@
           context.fill();
           context.stroke();
 
-          // 2. 左側垂直運動點
           var currentYOnGraph = yBase1 + y1Offset - (100 / y1Increment) * xPos[index];
           context.fillStyle = '#0cf';
           for (var i = 0; i < index; i = i + 20) {
@@ -702,7 +690,6 @@
           context.stroke();
         }
 
-        // 題目目標線
         context.strokeStyle = "#0f0";
         context.lineWidth = 6;
         context.beginPath();
@@ -720,7 +707,6 @@
         }
         context.stroke();
 
-        // 繪製 X-t 軌跡
         context.strokeStyle = "red";
         context.lineWidth = 4;
         context.beginPath();
@@ -738,7 +724,6 @@
         context.strokeStyle = '#000000';
         context.stroke();
 
-        // 繪製 V-t 軌跡
         context.strokeStyle = "red";
         context.lineWidth = 4;
         context.beginPath();
@@ -756,7 +741,6 @@
         context.strokeStyle = '#000000';
         context.stroke();
 
-        // 標題與文字
         context.font = 'bold 16pt Calibri';
         context.fillStyle = 'purple';
         context.textAlign = 'center';
@@ -767,7 +751,6 @@
         context.fillText(graph1Title, xBase2 + 200, yBase1 - 15);
         context.fillText(graph2Title, xBase2 + 200, yBase2 - 15);
 
-        // 數據顯示
         var infoY = 565;
         context.font = '14pt Calibri';
         var timeLabel = 't = ' + time.toFixed(2) + ' s';
