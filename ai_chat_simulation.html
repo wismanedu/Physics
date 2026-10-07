@@ -1,847 +1,596 @@
-<!DOCTYPE html>
-<html lang="zh-TW" class="dark">
+<!DOCTYPE1 html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 對話模擬器 - 物理實驗與AI幻覺的反思</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                        },
-                        chat: {
-                            bg: '#0f172a',
-                            sidebar: '#1e293b',
-                            card: '#1e293b',
-                            user: '#2563eb',
-                            ai: '#334155',
-                            border: '#334155'
-                        }
-                    },
-                    animation: {
-                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
-                }
-            }
-        }
-    </script>
+    <title>AI 對話模擬器 - 硬幣骨牌實驗</title>
     <style>
-        /* Scrollbar styles */
-        ::-webkit-scrollbar {
+        :root {
+            --bg-color: #212121;
+            --sidebar-bg: #171717;
+            --chat-user-bg: #2f2f2f;
+            --chat-ai-bg: #212121;
+            --input-bg: #2f2f2f;
+            --text-main: #ececec;
+            --text-muted: #b4b4b4;
+            --accent-color: #10a37f;
+            --link-color: #60a5fa;
+            --border-color: #424242;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Mock */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid #2d2d2d;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            gap: 8px;
+        }
+
+        .new-chat-btn {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px;
+            background: transparent;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: #2a2a2a;
+        }
+
+        .chat-history-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #212121;
+            font-size: 14px;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        /* Main Chat Window */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            height: 52px;
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .chat-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0 100px 0;
+            scroll-behavior: smooth;
+        }
+
+        .message-row {
+            max-width: 768px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .user-avatar {
+            background-color: #5436da;
+            color: white;
+        }
+
+        .ai-avatar {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        .message-content p {
+            margin-bottom: 12px;
+        }
+
+        .message-content ul, .message-content ol {
+            margin: 8px 0 12px 20px;
+        }
+
+        .message-content li {
+            margin-bottom: 4px;
+        }
+
+        .message-content strong {
+            color: #fff;
+        }
+
+        .message-content a {
+            color: var(--link-color);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .message-content a:hover {
+            color: #93c5fd;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+
+        .action-btn:hover {
+            background: #2a2a2a;
+            color: var(--text-main);
+        }
+
+        /* Typing Dots Animation */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 0;
+        }
+
+        .dot {
             width: 6px;
             height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(148, 163, 184, 0.2);
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(148, 163, 184, 0.4);
+            background-color: var(--text-muted);
+            border-radius: 50%;
+            animation: pulse 1.4s infinite ease-in-out;
         }
 
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes pulse {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
         }
 
-        .cursor-blink::after {
-            content: '▋';
+        /* Cursor Effect */
+        .cursor {
             display: inline-block;
-            vertical-align: baseline;
-            animation: blink 0.8s infinite;
-            color: #38bdf8;
+            width: 8px;
+            height: 16px;
+            background-color: var(--text-main);
             margin-left: 2px;
+            vertical-align: middle;
+            animation: blink 1s infinite;
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
             50% { opacity: 0; }
         }
 
-        /* Markdown rendered content formatting */
-        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-            font-weight: 700;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            color: #f1f5f9;
+        /* Input Bar */
+        .input-container-wrapper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(33,33,33,0) 0%, rgba(33,33,33,1) 30%);
+            padding: 20px 16px;
         }
-        .markdown-body h1 { font-size: 1.25rem; }
-        .markdown-body h2 { font-size: 1.1rem; }
-        .markdown-body h3 { font-size: 1rem; }
-        .markdown-body p {
-            margin-bottom: 0.75rem;
-            line-height: 1.6;
+
+        .input-box {
+            max-width: 768px;
+            margin: 0 auto;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .markdown-body ul, .markdown-body ol {
-            margin-left: 1.25rem;
-            margin-bottom: 0.75rem;
-            list-style-type: disc;
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 15px;
+            resize: none;
+            max-height: 120px;
         }
-        .markdown-body ol {
-            list-style-type: decimal;
+
+        .send-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #676767;
+            border: none;
+            color: #212121;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
         }
-        .markdown-body li {
-            margin-bottom: 0.25rem;
+
+        .send-btn.active {
+            background-color: #ffffff;
+            cursor: pointer;
         }
-        .markdown-body blockquote {
-            border-left: 3px solid #3b82f6;
-            padding-left: 0.75rem;
-            color: #94a3b8;
-            margin: 0.75rem 0;
-            background: rgba(59, 130, 246, 0.05);
-            padding-top: 0.25rem;
-            padding-bottom: 0.25rem;
-            border-radius: 0 0.375rem 0.375rem 0;
+
+        .send-btn.active:hover {
+            transform: scale(1.05);
         }
-        .markdown-body strong {
-            color: #38bdf8;
-        }
-        .markdown-body code {
-            background: rgba(15, 23, 42, 0.6);
-            padding: 0.15rem 0.4rem;
-            border-radius: 0.25rem;
-            font-size: 0.875em;
-            color: #f43f5e;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+
+        .input-tip {
+            text-align: center;
+            font-size: 12px;
+            color: #727272;
+            margin-top: 8px;
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+<body>
 
-    <!-- Top Header -->
-    <header class="sticky top-0 z-30 glass-panel border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-lg">
-        <div class="flex items-center space-x-3">
-            <div class="relative">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                    <i class="fa-solid fa-brain text-xl"></i>
-                </div>
-                <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
-            </div>
-            <div>
-                <h1 class="font-bold text-slate-100 text-base md:text-lg flex items-center gap-2">
-                    AI 對話模擬器 
-                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        硬幣骨牌實驗與 AI 幻覺
-                    </span>
-                </h1>
-                <p class="text-xs text-slate-400 flex items-center gap-2">
-                    <span id="progress-text">對話進度: 0 / 13</span>
-                    <span class="inline-block w-1 h-1 rounded-full bg-slate-600"></span>
-                    <span id="status-badge" class="text-emerald-400">準備就緒</span>
-                </p>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-2">
-            <!-- Transcript View Button -->
-            <button id="btn-transcript" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all duration-200 flex items-center gap-1.5">
-                <i class="fa-solid fa-list-ul"></i>
-                <span class="hidden sm:inline">完整對話劇本</span>
-            </button>
-            <!-- Restart Button -->
-            <button id="btn-restart" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all duration-200" title="重新開始對話 (R)">
-                <i class="fa-solid fa-rotate-right text-base"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Top Progress Bar -->
-    <div class="w-full bg-slate-800 h-1 relative overflow-hidden">
-        <div id="progress-bar" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-full w-0 transition-all duration-300 ease-out"></div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <button class="new-chat-btn">
+            <span>+ 新對話</span>
+            <span style="font-size: 12px; opacity: 0.6;">Ctrl K</span>
+        </button>
+        <div style="font-size: 11px; color: #676767; margin-top: 12px; margin-left: 8px;">對話歷史紀錄</div>
+        <div class="chat-history-item">🪙 硬幣骨牌物理實驗與AI幻覺</div>
     </div>
 
-    <!-- Main Chat Window -->
-    <main id="chat-container" class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 overflow-y-auto space-y-6 pb-36">
-        <!-- Start Callout Screen -->
-        <div id="welcome-card" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center shadow-xl backdrop-blur my-8">
-            <div class="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-                <i class="fa-solid fa-comments text-2xl"></i>
-            </div>
-            <h2 class="text-xl font-bold text-white mb-2">歡迎使用 AI 互動對話模擬器</h2>
-            <p class="text-slate-300 text-sm max-w-lg mx-auto mb-6 leading-relaxed">
-                本模擬器重現一段關於「硬幣骨牌物理實驗」與「AI 幻覺校正」的完整對話。點擊下方按鈕或按下 <kbd class="px-2 py-0.5 bg-slate-700 border border-slate-600 rounded text-xs font-mono text-blue-300">Space</kbd> / <kbd class="px-2 py-0.5 bg-slate-700 border border-slate-600 rounded text-xs font-mono text-blue-300">Enter</kbd> 鍵開始模擬對話。
-            </p>
-            <button id="btn-start" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 inline-flex items-center gap-2">
-                <i class="fa-solid fa-play"></i>
-                開始模擬對話
-            </button>
+    <!-- Main Chat View -->
+    <div class="main-container">
+        <div class="header">
+            <span>ChatGPT 4o</span>
+            <span style="font-size: 12px; font-weight: normal; background: #2a2a2a; padding: 4px 8px; border-radius: 6px;">模擬展示模式</span>
         </div>
-    </main>
 
-    <!-- Bottom Controls Footer Bar -->
-    <footer class="fixed bottom-0 left-0 right-0 glass-panel border-t border-slate-800 p-3 md:p-4 z-20 shadow-2xl">
-        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            
-            <!-- Controls left: Auto play toggle & Speed -->
-            <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
-                <button id="btn-autoplay" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-medium transition flex items-center gap-2">
-                    <i id="autoplay-icon" class="fa-solid fa-circle-play text-blue-400"></i>
-                    <span id="autoplay-label">自動播放: 關閉</span>
-                </button>
-
-                <div class="flex items-center space-x-1.5 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1.5 rounded-xl">
-                    <span class="text-xs text-slate-400">速度:</span>
-                    <select id="speed-select" class="bg-transparent text-xs text-blue-400 font-semibold focus:outline-none cursor-pointer">
-                        <option value="1">1.0x (標準)</option>
-                        <option value="1.5" selected>1.5x (快速)</option>
-                        <option value="2.5">2.5x (極速)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Primary Action Button: Next Message -->
-            <div class="w-full sm:w-auto flex items-center gap-2">
-                <button id="btn-next" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 active:scale-95 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="btn-next-text">吐出下一段文字</span>
-                    <i class="fa-solid fa-paper-plane text-sm"></i>
-                </button>
-            </div>
+        <div class="chat-scroll-area" id="chatArea">
+            <!-- Dynamic Messages rendered by JS -->
         </div>
-    </footer>
 
-    <!-- Modal for Full Script Transcript -->
-    <div id="modal-transcript" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
-                <h3 class="font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-book-open text-blue-400"></i>
-                    對話劇本清單 (共 13 則)
-                </h3>
-                <button id="btn-close-modal" class="text-slate-400 hover:text-white p-1 rounded-lg">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+        <!-- Floating Input Bar -->
+        <div class="input-container-wrapper">
+            <div class="input-box">
+                <input type="text" id="userInput" class="chat-input" placeholder="點擊送出按鈕發送下一段對話..." readonly>
+                <button id="sendBtn" class="send-btn active" title="點擊發送下一段對話">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
                 </button>
             </div>
-            <div id="modal-content" class="p-5 overflow-y-auto space-y-3 flex-1 text-xs md:text-sm text-slate-300">
-                <!-- Transcript items generated by JS -->
-            </div>
+            <div class="input-tip">💡 提示：點擊右側箭頭或按下 Enter，即可進入下一段對話</div>
         </div>
     </div>
 
-    <!-- JavaScript Application Logic -->
     <script>
-        // Conversation Transcript Data
-        const dialogueData = [
+        // Transcript Data with 404 & YouTube Search Verification Links
+        const conversationData = [
             {
                 role: 'user',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User123',
-                name: '使用者',
-                content: `1. 驚人的「硬幣骨牌」：角動量與碰撞（The Coin Spin Dominoes）
-
-通常我們玩骨牌，都是一個倒了撞倒下一個。但這個實驗能讓學生看到：「我明明沒有碰它，它卻會自己像骨牌一樣一個接一個倒下！」
-
-**準備材料：** 4 到 5 個大小相同的硬幣（例如 50 元硬幣）、一張平滑的桌面。
-
-**操作步驟：**
-1. 將其中 4 個硬幣排成一列，每個硬幣之間保持大約 2~3 公分的距離。
-2. 拿起第 5 個硬幣，在第一顆硬幣的前方用力讓它像陀螺一樣「旋轉」起來。
-3. 當這個旋轉的硬幣在原地轉著轉著，慢慢失去能量，開始傾斜擺動時……
-
-**現象：** 旋轉硬幣在平貼桌面的瞬間，會「啪」的一聲拍擊桌面，接著第二個靜止的硬幣會突然自己跳起來並開始旋轉！然後第二個硬幣倒下時，又會觸發第三個硬幣旋轉……就像魔法骨牌一樣，旋轉的能量一個傳一個！
-
-**物理原理：**
-當硬幣快要停止旋轉時，會進入我們前面提過的「剛體擺動（Nutational motion）」。在它完全平貼桌面的那一剎那，它會對桌面施加一個強烈的震動力矩，並透過桌面將這個切線方向的角動量波動傳遞出去。
-當這股能量傳到下一個硬幣的邊緣時，不對稱的向上衝擊力矩正好擊中硬幣的重心外側，完美的觸發了下一個硬幣的旋轉狀態。`
-            },
-            {
-                role: 'user',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User123',
-                name: '使用者',
-                content: `拍硬幣那個再說一次`
+                text: `拍硬幣那個再說一次`
             },
             {
                 role: 'assistant',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GeminiAI',
-                name: 'AI 助手',
-                content: `沒問題！這個「硬幣旋轉骨牌」實驗非常神奇，因為它完全不需要你去碰下一個硬幣，能量就會像波浪一樣傳遞過去。
+                text: `沒問題！這個「硬幣旋轉骨牌」實驗非常神奇，因為它完全不需要你去碰下一個硬幣，能量就會像波浪一樣傳遞過去。
 
 這裡為你提供更詳細、更好成功的步驟，以及背後藏著的精彩物理。
 
-### 🪙 實驗準備與操作步驟
+<strong>🪙 實驗準備與操作步驟</strong>
+<ul>
+  <li><strong>準備材料：</strong> 4 到 5 個厚重、大小相同的硬幣（極度推薦使用新台幣 50 元硬幣）。一張非常平滑且堅固的桌面。</li>
+  <li><strong>排列方式：</strong> 將其中 3~4 個硬幣在桌上排成一列，每個硬幣之間保持大約 1 到 2 公分的距離。</li>
+  <li><strong>神奇操作：</strong> 拿起第 5 個硬幣，在第一顆硬幣前方用力讓它像陀螺一樣旋轉起來。</li>
+  <li><strong>現象：</strong> 旋轉硬幣在完全平貼桌面的瞬間，第二個靜止的硬幣會突然自己跳起來並開始旋轉！能量一個傳一個！</li>
+</ul>
 
-* **準備材料：** 4 到 5 個厚重、大小相同的硬幣（極度推薦使用新台幣 50 元硬幣，因為它夠重、邊緣夠厚，效果最好）。一張非常平滑且堅固的桌面（如玻璃桌面或平滑的木桌）。
-* **排列方式：** 將其中 3~4 個硬幣在桌上排成一列。**關鍵：** 每個硬幣之間要保持大約 1 到 2 公分的距離（不要貼在一起）。
-* **神奇操作：**
-  1. 拿起剩下的一顆硬幣，在第一顆硬幣前方（約 2 公分處），用手指用力把它像陀螺一樣在桌面上「旋轉」起來。
-  2. 靜靜觀察。當這個旋轉硬幣因為摩擦力慢慢減速、開始劇烈搖晃（快要倒下）時……
-  3. **現象：** 在旋轉硬幣「啪」的一聲完全平貼桌面的那一瞬間，它明明沒有碰觸到第二顆硬幣，但原本靜止的第二顆硬幣卻會突然自己跳起來、在原地旋轉！
-  4. 接著，當第二顆硬幣快倒下平貼桌面時，第三顆硬幣也會自己跳起來旋轉……能量就像骨牌一樣，一個接一個傳下去！
+<strong>🔬 為什麼會這樣？（反直覺的物理真相）</strong>
+<ol>
+  <li><strong>剛體擺動（Nutational motion）：</strong> 硬幣倒下最後一秒發出極尖銳嗡嗡聲。</li>
+  <li><strong>衝擊力矩：</strong> 平貼桌面瞬間轉化成強烈垂直震動波傳遞出去。</li>
+  <li><strong>重心不對稱與能量共振：</strong> 震動波擊中下一個硬幣重心外側，精準將它挑起來轉動！</li>
+</ol>
 
----
-
-### 🔬 為什麼會這樣？（反直覺的物理真相）
-
-這個實驗看起來像魔法，但背後其實結合了三個高中的核心力學概念：
-
-1. **剛體擺動（Nutational motion）與奇異點**
-   當硬幣轉得很快時，它的自轉軸是垂直的。但隨著速度變慢，硬幣開始傾斜，這時它會一邊自轉，硬幣邊緣一邊在桌面上做快速的圓周滾動。
-   在快要完全倒下的最後一秒，硬幣邊緣拍擊桌面的頻率會急劇飆高（這也是為什麼我們聽硬幣倒下時，最後會發出極其尖銳的「嗡嗡嗡啪」的聲音）。
-
-2. **波動矩的衝擊（衝擊力矩）**
-   當第一個硬幣在最後「啪」的一聲平貼桌面的那一剎那，它將累積的角動量瞬間轉化成一個強烈的垂直震動波，透過桌面傳遞出去。
-
-3. **重心不對稱與能量共振**
-   當這個震動波在桌面上傳導、碰到第二顆硬幣的邊緣時，因為衝擊力不是傳到硬幣的正中心，而是從邊緣網上拍擊，這會對第二顆硬幣的重心產生一個「不對稱的力矩」。加上所有硬幣大小、重量一模一樣，它們的固有頻率完美共振，這個力矩就像一隻無形的手，精準地把第二顆硬幣從邊緣「挑起來」，讓它再度轉動！
-
----
-
-### 💡 成功小秘訣（魔鬼藏在細節裡）
-
-* **硬幣不要太輕：** 10元或1元硬幣太輕、太薄，拍擊桌面的能量不夠大，很難觸發下一顆。請務必用 50元硬幣。
-* **桌面材質：**
-  * ❌ 不要選厚木桌或塑膠桌墊，因為它們會把震動波「吸收（阻尼）」掉。
-  * ⭕ 選強化玻璃、大理石，或是很硬的辦公桌，震動波傳導效果最好。
-* **距離要微調：** 如果發現第二顆跳不起來，可以把硬幣間的距離稍微縮短一點點（例如改為 1 公分）。`
+<strong>現成影片與論文參考：</strong>
+<ul>
+  <li><a href="https://www.youtube.com/results?search_query=Coin+spin+dominoes" target="_blank">🔍 搜尋影片：Coin Spin Dominoes (YouTube 實測)</a></li>
+  <li><a href="https://www.nature.com/articles/404833a0_404_mock" target="_blank">📄 論文參考：Moffatt (2000) Nature 歐拉盤論文 (模擬 404)</a></li>
+</ul>`
             },
             {
                 role: 'user',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User123',
-                name: '使用者',
-                content: `現成影片`
+                text: `找不到。你具體的來源或出處是什麼？`
             },
             {
                 role: 'assistant',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GeminiAI',
-                name: 'AI 助手',
-                content: `這個「硬幣旋轉骨牌」的實驗在國際上非常著名的物理演示名稱叫做 **"Coin Spin Dominoes"**、**"Spinning Coin Chain Reaction"** 或 **"The Coin Trick"**。
+                text: `我非常理解你的挫折感！這個實驗並不是網路魔術，而是有正式的物理學術論文與知名科普節目作為出處來源的：
 
-以下為你搜尋到了網路上現成的 YouTube 物理演示影片。你可以點擊觀看他們是如何排列、操作，以及硬幣在最後一刻是如何「啪」的一聲把能量傳給下一個硬幣的：
+<strong>1. 權威學術出處：美國物理教師協會（AAPT）</strong>
+<ul>
+  <li><a href="https://aapt.scitation.org/doi/10.1119/1.404_mock_link" target="_blank">文獻：The Spinning Coin Domino Effect (404 網頁)</a></li>
+</ul>
 
-### 📺 推薦觀看影片（點擊文字即可直接跳轉播放）：
+<strong>2. 知名科普電視節目來源：日本 NHK《大科學實驗》</strong>
+<ul>
+  <li><a href="https://www.nhk.or.jp/daikagaku/archive/404_not_found" target="_blank">節目頁面：聲音與震動的能量傳遞 (404 網頁)</a></li>
+</ul>
 
-* **[Coin Spin Dominoes (神奇硬幣骨牌演示)]**
-  * 這個影片非常清晰地展示了 4 到 5 個硬幣排成一列，第一個硬幣倒下時，後面的硬幣依序被「喚醒」旋轉的完整過程。
-* **[Spinning Coin Chain Reaction (硬幣旋轉連鎖反應)]**
-  * 這個短片用了慢動作鏡頭，你可以非常清楚地看到硬幣在完全平貼桌面（最後一刻劇烈震動）時，是怎麼透過桌面把下一個硬幣「彈」起來的。
-* **[The Spinning Coin Domino Effect (硬幣旋轉骨牌效應)]**
-  * 另一個視角非常好的操作示範，影片中還調整了不同的硬幣間距，非常適合拿來當作上課演示的現成教材。
-
----
-
-### 🔍 如果你想在 YouTube 搜尋更多影片：
-
-你可以直接複製以下英文關鍵字在 YouTube 搜尋，會有非常多科學愛好者和物理老師的現成短片（Shorts）與教學影片：
-* \`Coin spin dominoes\`
-* \`Spinning coin chain reaction\`
-
-看過影片後你會發現，關鍵真的在於硬幣要夠大（像台灣的50元硬幣），而且桌面一定要硬（例如玻璃或石材桌面），看著硬幣一個接一個自己跳起來轉動，真的非常療癒且反直覺！`
+<strong>3. 推薦搜尋關鍵字：</strong>
+你可以直接在 YouTube 搜尋 <a href="https://www.youtube.com/results?search_query=%22spinning+coin%22+%22chain+reaction%22+physics" target="_blank">"spinning coin" "chain reaction" physics</a>，就能看到許多短影片。`
             },
             {
                 role: 'user',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User123',
-                name: '使用者',
-                content: `找不到`
+                text: `給出具體能查到的文獻或影片節目`
             },
             {
                 role: 'assistant',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GeminiAI',
-                name: 'AI 助手',
-                content: `啊，非常抱歉！因為剛剛給的是文字連結格式，有時候系統在跳轉時可能會失效。
+                text: `非常抱歉！以下為你整理出 100% 可以精準查到的具體來源與文獻：
 
-為了讓你最快看到影片，你可以直接打開 YouTube App 或網頁，在搜尋欄直接輸入下面這幾個關鍵字，保證一搜尋就能看到大量的現成示範影片：
+<strong>1. YouTube 具體搜尋關鍵字與影片：</strong>
+<ul>
+  <li><a href="https://www.youtube.com/results?search_query=Spinning+Coin+Chain+Reaction+Satisfying" target="_blank">🔍 Spinning Coin Chain Reaction (Satisfying) - 頻道 Magnet Tricks</a></li>
+  <li><a href="https://www.youtube.com/results?search_query=The+Impossible+Coin+Spin+Trick+Chris+Ramsay" target="_blank">🔍 The Impossible Coin Spin Trick - 頻道 Chris Ramsay</a></li>
+</ul>
 
-### 🔍 請在 YouTube 搜尋以下關鍵字：
-* \`Coin spin dominoes\`（這是這個實驗最標準的英文名稱，有很多高畫質的示範）
-* \`Spinning coin chain reaction\`（硬幣旋轉連鎖反應，可以看到連續跳起來的畫面）
-* \`硬幣 旋轉 骨牌\`（也有一些華語科學網紅做過類似的短片挑戰）
+<strong>2. 本質物理現象：歐拉盤（Euler's Disk）</strong>
+<ul>
+  <li><a href="https://www.youtube.com/results?search_query=Euler%27s+disk+physics+girl" target="_blank">🔍 Euler's disk physics girl (Physics Girl 頻道)</a></li>
+</ul>
 
----
-
-### 🎥 影片中你會看到的關鍵畫面：
-
-當你搜尋到影片後，可以特別注意以下細節，這能幫你等等自己操作時更容易成功：
-* **排成一直線：** 影片中他們會把硬幣排得非常直，通常是用 4~5 個跟台灣 50 元差不多大的大硬幣。
-* **完美的距離：** 注意看他們硬幣與硬幣之間的間距，大約只有一個大拇指的寬度（約 1.5~2 公分）。
-* **最後的嗡嗡聲：** 第一個硬幣快要倒下時，會貼著桌面發出極速的「嗡嗡嗡嗡——」震動，就在聲音停止、硬幣拍死在桌面上的那一瞬間，第二個硬幣就會像被通電一樣，突然自己「蹦」一聲跳起來自轉！
-
-這個實驗因為不需要任何改裝，只要硬幣和一張硬梆梆的桌子（玻璃桌或大理石桌最好），看過影片後直接在教室或家裡試一次，成就感會非常高！`
+<strong>3. 學術文獻出處 (Nature / Physical Review E)：</strong>
+<ul>
+  <li><a href="https://www.nature.com/articles/404833a0" target="_blank">Moffatt, H. K. (2000). "Euler's disk and its finite-time singularity." Nature</a></li>
+  <li><a href="https://journals.aps.org/pre/abstract/10.1103/PhysRevE.404_not_found" target="_blank">Caps, H., et al. (2004). "Acoustic energy emission of a spinning coin." Physical Review E (404 網頁)</a></li>
+</ul>`
             },
             {
                 role: 'user',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User123',
-                name: '使用者',
-                content: `找不到這個。 你具體的來源或出處`
+                text: `Q: 有適合國中升高中的有趣物理實驗嗎?
+A: 驚人的「硬幣骨牌」：角動量與碰撞（The Coin Spin Dominoes）...`
             },
             {
                 role: 'assistant',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GeminiAI',
-                name: 'AI 助手',
-                content: `我非常理解你的挫折感！有時候搜尋演算法會因為地區、關鍵字權重，或是因為這個現像在不同領域有不同的稱呼（有些物理學家叫它「非線性聲學耦合」或「隨機共振」），導致在 YouTube 上一時間被埋沒。
+                text: `非常抱歉，我必須直接且坦誠地向你修正一個嚴重的錯誤：<strong>這個世界上其實「沒有」任何一個不經改裝、純靠物理共振就能讓下一顆硬幣「自己跳起來旋轉」的普通硬幣骨牌實驗。</strong>
 
-這個實驗並不是網路魔術，而是有正式的物理學術論文與知名科普節目作為出處來源的。以下為你提供它最精準的學術出處與電視節目來源，你可以用這些資訊直接找到它：
+之前的回答中，我犯了 AI 常常會出現的<strong>「幻覺（Hallucination）」</strong>錯誤，把幾個完全不同的物理現象、網路魔術影片、以及魔改過的科學玩具錯誤地拼接在一起，編造了一個看起來很完美的偽科學故事。
 
-### 1. 權威學術出處：美國物理教師協會（AAPT）
-這個實驗的物理機制和教學設計，最早被詳細記錄在《美國物理期刊》（American Journal of Physics）中：
-* **文獻名稱：** *The Spinning Coin Domino Effect* 或者是探討 *Nutational acoustic coupling of flat disks*。
-* **主要研究內容：** 論文中詳細計算了硬幣在最後平貼桌面時（稱為歐拉盤效應的末期），其邊緣釋放的微觀「衝擊力矩（Impulse Torque）」如何透過固體表面（桌面）傳導，並在特定距離內激發另一個具有相同固有頻率（Natural Frequency）的剛體。
+<strong>1. 網路現成影片的真相：那是「磁力改裝」魔術</strong>
+拍影片的人會在桌子下方偷偷藏一排強力的釹鐵硼磁鐵，或者硬幣本身就是特殊加工過的磁性道具。如果只用普通的 50 元硬幣和普通桌面，下一顆硬幣都只會原地一動也不動。
 
----
+<strong>2. 關於我之前提到的文獻：我張冠李戴了</strong>
+<ul>
+  <li><strong>歐拉盤（Euler's Disk）論文：</strong> 它從頭到尾都在研究「單一圓盤」的能量耗散，根本沒有提到可以隔空震動出下一顆旋轉硬幣。</li>
+  <li><strong>NHK《大科學實驗》：</strong> 從來沒有做過「旋轉硬幣連鎖反應」這種實驗。</li>
+</ul>
 
-### 2. 知名科普電視節目來源：日本 NHK《大科學實驗》
-如果你想看最精緻、最清晰的現成影片，這個實驗曾被日本 NHK 電視台著名的科普節目《大科學實驗》（Great Science Experiments）做成專題演示：
-* **節目集數主題：** 探討「聲音與震動的能量傳遞」（音のエネルギー / 振動の伝播）。
-* **影片內容：** 節目中科學家使用巨大的金屬圓盤排成一列，在硬地面上旋轉第一個圓盤，最後成功引發後面一整排巨大圓盤依序自己跳起來旋轉的壯觀畫面。這證實了只要「材質夠硬（減少能量吸收）」與「頻率相同（共振）」，這個實驗甚至可以放大到數公尺大。
+<strong>💡 真正存在、100% 玩得出來的替代實驗：硬幣的「超距動量傳遞」</strong>
+這是經典的「牛頓擺（Newton's Cradle）」硬幣版：將 4 個硬幣緊貼排成一列，用手指壓住中間 3 顆，拿第 5 顆撞擊尾端——最前端未被壓住的硬幣會瞬間噴飛出去！這是真實且震撼的動量守恆實驗。
 
----
-
-### 3. 精準搜尋祕訣（推薦短影音關鍵字）
-如果你在 YouTube 上還是找不到，請直接嘗試在 Google 搜尋列輸入這個完全不帶任何花俏字的關鍵字組合：
-> \`"spinning coin" "chain reaction" physics\` *(注意：加上引號可以強迫搜尋引擎精準匹配這幾個字)*
-
-這個實驗最迷人的地方，就在於它不需要任何高科技改造，純粹靠著幾枚 50 元硬幣和一張桌子，就能重現大學力學等級的「波導與共振」現象！`
-            },
-            {
-                role: 'user',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User123',
-                name: '使用者',
-                content: `給出具體能查到的文獻或影片節目`
-            },
-            {
-                role: 'assistant',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GeminiAI',
-                name: 'AI 助手',
-                content: `非常抱歉，之前因為用描述性或籠統的名稱，加上搜尋演算法的關係，讓你沒能順利找到影片。
-
-在物理學和歐美科學博主（Science YouTubers）的社群中，這個實驗有非常具體的「專有名詞」與「頻道出處」。以下為你整理出100%可以精準查到、能直接在 YouTube 或 Google 搜尋觀看的具體來源與文獻：
-
-### 1. YouTube 具體搜尋關鍵字與影片（保證一查就有）
-這個實驗在 YouTube 上最爆紅的影片，是由知名的科學解謎 YouTuber **"Chris Ramsay"**（500多萬訂閱）與物理展示頻道所拍攝。
-
-請直接複製以下具體的標題在 YouTube 搜尋：
-* 🔍 **\`Spinning Coin Chain Reaction (Satisfying)\`**
-  * **出處頻道：** Magnet Tricks 或 Physics Fun。
-  * **影片內容：** 畫面中就是用 4~5 個硬幣（通常是 50p 英鎊或大號硬幣）排成一列。他用手指旋轉第一個硬幣，第一個硬幣快倒下發出高頻聲音時，完全沒碰到第二個硬幣，第二個硬幣就「蹦」一聲自己跳起來旋轉。
-* 🔍 **\`The Impossible Coin Spin Trick\`**
-  * **出處頻道：** Chris Ramsay。
-  * **影片內容：** 這是一位知名魔術師兼科學愛好者，他專門拍了一支 Shorts 短片，挑戰「完全不碰硬幣，讓第二個硬幣自己轉起來」的力學連鎖反應，展示了極近距離的慢動作（Slow-motion）畫面。
-
----
-
-### 2. 本質物理現象的權威出處：歐拉盤（Euler's Disk）
-硬幣在最後一刻快速震動、發出「嗡嗡嗡啪」聲音並釋放能量的現象，在物理學上有一個專門的商品與研究名稱叫做 **"Euler's Disk"（歐拉盤）**。
-
-如果你想看這個物理現象被放大到極致、更震撼的影片，請在 YouTube 搜尋：
-* 🔍 \`Euler's disk physics girl\`（知名物理科普頻道 Physics Girl 的詳細原理實驗影片）
-* 🔍 \`Toying with Physics - Euler's Disk\`（由科普頻道 Veritasium 所拍攝的超高畫質、超高分貝的歐拉盤旋轉極限展示）
-
----
-
-### 3. 學術文獻出處（可於 Google Scholar 查閱）
-如果你需要國高中物理專題（探究與實作、科展）可以引用的正式學術出處，相關的核心研究文獻如下：
-
-1. **文獻 1（關於硬幣最後旋轉的能量流失與震動）：**
-   * **題目：** Moffatt, H. K. (2000). *"Euler's disk and its finite-time singularity."* **Nature**, 404(6780), 833-834.
-   * **出處：** 世界頂級科學期刊《Nature》（自然）。這篇論文詳細探討了硬幣在倒下最後一刻，為什麼旋轉與擺動頻率會無限變快、如何對桌面產生劇烈的垂直力矩衝擊。
-
-2. **文獻 2（關於固體表面的震動波傳導傳遞力矩）：**
-   * **題目：** Caps, H., et al. (2004). *"Acoustic energy emission of a spinning coin."* **Physical Review E**.
-   * **出處：** 《物理評論E》（Physical Review E）。這篇文獻詳細測量了硬幣在桌面上旋轉倒下時，釋放出的能量波如何透過固體表面（桌面）傳導給周邊的物體。
-
----
-
-💡 **實作建議提示：**
-觀看影片時你會發現，那些博主為了提高成功率，通常會使用「有紋路邊緣且較厚」的硬幣（因為在最後倒下時能對地面產生更大的拍擊摩擦力矩）。這也是為什麼在台灣做這個實驗，用「50元硬幣」的成功率會遠高於薄薄的10元或1元硬幣！`
-            },
-            {
-                role: 'user',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User123',
-                name: '使用者',
-                content: `Q: 有適合國中升高中的有趣物理實驗嗎?
-
-A: 驚人的「硬幣骨牌」：角動量與碰撞（The Coin Spin Dominoes）
-
-通常我們玩骨牌，都是一個倒了撞倒下一個。但這個實驗能讓學生看到：「我明明沒有碰它，它卻會自己像骨牌一樣一個接一個倒下！」
-
-準備材料： 4 到 5 個大小相同的硬幣（例如 50 元硬幣）、一張平滑的桌面。
-
-操作步驟：
-將其中 4 個硬幣排成一列，每個硬幣之間保持大約 2~3 公分的距離。
-拿起第 5 個硬幣，在第一顆硬幣的前方用力讓它像陀螺一樣「旋轉」起來。
-當這個旋轉的硬幣在原地轉著轉著，慢慢失去能量，開始傾斜擺動時……
-
-現象： 旋轉硬幣在平貼桌面的瞬間，會「啪」的一聲拍擊桌面，接著第二個靜止的硬幣會突然自己跳起來並開始旋轉！然後第二個硬幣倒下時，又會觸發第三個硬幣旋轉……就像魔法骨牌一樣，旋轉的能量一個傳一個！
-
-物理原理：
-當硬幣快要停止旋轉時，會進入我們前面提過的「剛體擺動（Nutational motion）」。在它完全平貼桌面的那一剎那，它會對桌面施加一個強烈的震動力矩，並透過桌面將這個切線方向的角動量波動傳遞出去。
-當這股能量傳到下一個硬幣的邊緣時，不對稱的向上衝擊力矩正好擊中硬幣的重心外側，完美的觸發了下一個硬幣的旋轉狀態。`
-            },
-            {
-                role: 'assistant',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GeminiAI',
-                name: 'AI 助手',
-                content: `非常抱歉，我必須直接且坦誠地向你修正一個嚴重的錯誤：**這個世界上其實「沒有」任何一個不經改裝、純靠物理共振就能讓下一顆硬幣「自己跳起來旋轉」的普通硬幣骨牌實驗。** 
-
-之前的回答中，我犯了 AI 常常會出現的**「幻覺（Hallucination）」**錯誤，把幾個完全不同的物理現象、網路魔術影片、以及魔改過的科學玩具錯誤地拼接在一起，編造了一個看起來很完美的偽科學故事。
-
-為了不誤導你和國高中的學生，我必須向你揭開這個「硬幣旋轉骨牌」在網路上和現實中的真實面貌：
-
----
-
-### 1. 網路現成影片的真相：那是「磁力改裝」魔術
-你在網路上（例如 TikTok、YouTube Shorts）如果看到有人把一排硬幣放著，轉動第一個，後面就會接連跳起來旋轉的影片，**那些全部都是道具魔術，不是純物理現象。**
-* **真正的機關：** 拍影片的人會在桌子下方偷偷藏一排強力的釹鐵硼磁鐵，或者硬幣本身就是特殊加工過的磁性道具。
-* **真實的過程：** 當第一顆硬幣倒下時，它改變了當地的磁場平衡，觸發了下一顆硬幣與地下磁鐵的排斥力，才讓它「跳」起來。如果只用普通的 50 元硬幣和普通桌面，不論你轉得再完美、桌子再硬，下一顆硬幣都只會原地一動也不動。
-
----
-
-### 2. 關於我之前提到的文獻：我張冠李戴了
-我之前提到的科學文獻和物理名詞是真實存在的，但它們的物理現象完全不是「讓下一顆硬幣跳起來轉動」：
-* **歐拉盤（Euler's Disk）與 Moffatt 的論文（2000, Nature）：**
-  這篇經典論文探討的是單一顆厚重的圓盤（或硬幣）在倒下的最後一刻，因為空氣阻力和黏滯力，擺動頻率會趨近於無窮大（有限時間奇異點），發出高頻的嗡嗡聲。它從頭到尾都在研究「單一圓盤」的能量耗散，**根本沒有提到可以隔空震動出下一顆旋轉硬幣。**
-* **NHK《大科學實驗》：**
-  該節目確實做過「聲音與震動的能量傳遞」，但他們是用音叉引發共振，或是用巨大的重物撞擊地面讓旁邊的物體「彈跳」一下，從來沒有做過「旋轉硬幣連鎖反應」這種實驗。
-
----
-
-### 💡 真正存在、材料簡單、且 100% 玩得出來的「硬幣力學實驗」
-
-如果你想找「好操作、材料一樣是硬幣、而且真的反直覺」的國高中物理實驗，這裡提供一個百分之百真實存在、且不需要任何機關的經典力學演示：
-
-#### 🧪 實驗：硬幣的「超距動量傳遞」
-這個實驗能完美替代你原本想要的骨牌效果，操作更簡單，原理是純粹的一維彈性碰撞（動量與能量守恆）。
-
-* **準備材料：** 5~6 個一模一樣的硬幣（用 50 元或 10 元皆可）、一根長直尺（當作軌道，非必須）。
-* **操作步驟：**
-  1. 將 4 個硬幣排成一列，彼此緊緊貼在一起，連成一條線。
-  2. 用左手手指「壓死」中間的三顆硬幣，讓它們絕對不能移動。
-  3. 右手拿起第 5 個硬幣，距離這排硬幣約 5 公分，然後用力往前彈射，正面撞擊這排硬幣的最尾端。
-
-* **反直覺現象：**
-  你用手指壓住了中間所有的硬幣，直覺上會覺得大家都動彈不得。但當你彈出的硬幣撞擊後，被你手指壓住的那些硬幣真的全部一動也不動，反而是**「最前端、距離撞擊點最遠、且你沒有用手指壓住」的那一顆硬幣，會瞬間噴飛出去！**
-
-* **真正的物理原理：**
-  這就是經典的**「牛頓擺（Newton's Cradle）」**硬幣版。碰撞發生的時間極短，動能轉化為壓力波，以極高的速度穿過中間被壓住的硬幣。因為中間的硬幣兩側都有人挨著，受力平衡；只有最前端的那顆硬幣前方是空的（沒有正向力阻擋），於是所有的動量與能量都在最後一刻傳給了它，將它發射出去。
-
----
-
-誠摯向你道歉！AI 有時會過度自信地組合資訊。希望這個澄清與真實的硬幣碰撞實驗對你有幫助！`
+再次為我之前的「AI 幻覺」誠摯道歉！`
             }
         ];
 
         let currentIndex = 0;
-        let isTyping = false;
-        let autoPlayTimer = null;
-        let isAutoPlay = false;
+        const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
 
-        // DOM elements
-        const chatContainer = document.getElementById('chat-container');
-        const welcomeCard = document.getElementById('welcome-card');
-        const btnNext = document.getElementById('btn-next');
-        const btnNextText = document.getElementById('btn-next-text');
-        const btnStart = document.getElementById('btn-start');
-        const btnRestart = document.getElementById('btn-restart');
-        const btnAutoplay = document.getElementById('btn-autoplay');
-        const autoplayLabel = document.getElementById('autoplay-label');
-        const autoplayIcon = document.getElementById('autoplay-icon');
-        const speedSelect = document.getElementById('speed-select');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const statusBadge = document.getElementById('status-badge');
-        const btnTranscript = document.getElementById('btn-transcript');
-        const modalTranscript = document.getElementById('modal-transcript');
-        const btnCloseModal = document.getElementById('btn-close-modal');
-        const modalContent = document.getElementById('modal-content');
-
-        // Configure marked parser options
-        marked.setOptions({
-            breaks: true,
-            gfm: true
-        });
-
-        // Initialize script modal contents
-        function buildTranscriptModal() {
-            modalContent.innerHTML = '';
-            dialogueData.forEach((item, idx) => {
-                const isAi = item.role === 'assistant';
-                const div = document.createElement('div');
-                div.className = `p-3 rounded-xl border ${isAi ? 'bg-slate-800/80 border-slate-700' : 'bg-blue-950/30 border-blue-900/50'}`;
-                div.innerHTML = `
-                    <div class="flex items-center gap-2 mb-1.5 font-semibold text-xs ${isAi ? 'text-indigo-400' : 'text-blue-400'}">
-                        <span>#${idx + 1} ${item.name}</span>
-                    </div>
-                    <div class="text-slate-300 text-xs line-clamp-3">${item.content.replace(/[\n\r]+/g, ' ')}</div>
-                `;
-                modalContent.appendChild(div);
-            });
-        }
-
-        // Render single message entry
-        function displayNextMessage() {
-            if (currentIndex >= dialogueData.length || isTyping) return;
-
-            // Remove welcome screen on first interaction
-            if (welcomeCard) {
-                welcomeCard.remove();
-            }
-
-            const data = dialogueData[currentIndex];
-            isTyping = true;
-            updateUIState();
-
-            const isAi = data.role === 'assistant';
-            const messageWrapper = document.createElement('div');
-            messageWrapper.className = `flex gap-3 md:gap-4 ${isAi ? 'justify-start' : 'justify-end'} opacity-0 translate-y-3 transition-all duration-300`;
-
-            const avatarHtml = `
-                <div class="w-8 h-8 md:w-9 md:h-9 rounded-xl flex-shrink-0 flex items-center justify-center ${isAi ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20' : 'bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20'} overflow-hidden">
-                    <img src="${data.avatar}" alt="${data.name}" class="w-full h-full object-cover p-1">
-                </div>
-            `;
-
-            const bubbleHtml = `
-                <div class="max-w-[85%] sm:max-w-[78%] rounded-2xl p-4 md:p-5 shadow-lg ${isAi ? 'bg-slate-800 border border-slate-700/80 text-slate-100' : 'bg-blue-600 text-white'}">
-                    <div class="flex items-center justify-between mb-2 pb-1 border-b ${isAi ? 'border-slate-700/60' : 'border-blue-500/50'}">
-                        <span class="font-bold text-xs ${isAi ? 'text-indigo-300' : 'text-blue-100'}">${data.name}</span>
-                        <span class="text-[10px] ${isAi ? 'text-slate-400' : 'text-blue-200'}">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    <div class="markdown-body text-xs md:text-sm leading-relaxed" id="message-body-${currentIndex}"></div>
-                </div>
-            `;
-
-            if (isAi) {
-                messageWrapper.innerHTML = avatarHtml + bubbleHtml;
-            } else {
-                messageWrapper.innerHTML = bubbleHtml + avatarHtml;
-            }
-
-            chatContainer.appendChild(messageWrapper);
-
-            // Animate wrapper entrance
-            setTimeout(() => {
-                messageWrapper.classList.remove('opacity-0', 'translate-y-3');
-            }, 50);
-
-            const contentTarget = document.getElementById(`message-body-${currentIndex}`);
-            
-            // Dynamic typewriter typing effect
-            if (isAi) {
-                typewriterEffect(contentTarget, data.content, () => {
-                    isTyping = false;
-                    currentIndex++;
-                    updateUIState();
-                    scrollToBottom();
-                    if (isAutoPlay && currentIndex < dialogueData.length) {
-                        scheduleAutoPlay();
-                    }
-                });
-            } else {
-                // Immediate render for user messages with light typing delay simulation
-                contentTarget.innerHTML = marked.parse(data.content);
-                setTimeout(() => {
-                    isTyping = false;
-                    currentIndex++;
-                    updateUIState();
-                    scrollToBottom();
-                    if (isAutoPlay && currentIndex < dialogueData.length) {
-                        scheduleAutoPlay();
-                    }
-                }, 300);
-            }
-        }
-
-        function typewriterEffect(container, text, callback) {
-            container.classList.add('cursor-blink');
-            let charIndex = 0;
-            const fullLen = text.length;
-            const speedMultiplier = parseFloat(speedSelect.value) || 1.5;
-            
-            // Calculate step size & interval based on length & speed setting
-            const step = Math.max(1, Math.floor(fullLen / 120));
-            const baseInterval = Math.max(8, Math.floor(25 / speedMultiplier));
-
-            const timer = setInterval(() => {
-                charIndex += step;
-                if (charIndex >= fullLen) {
-                    charIndex = fullLen;
-                    clearInterval(timer);
-                    container.classList.remove('cursor-blink');
-                    container.innerHTML = marked.parse(text);
-                    if (callback) callback();
+        function updatePlaceholder() {
+            if (currentIndex < conversationData.length) {
+                const nextMessage = conversationData[currentIndex];
+                if (nextMessage.role === 'user') {
+                    userInput.placeholder = `[準備發送]: ${nextMessage.text.substring(0, 30)}...`;
                 } else {
-                    const currentChunk = text.substring(0, charIndex);
-                    container.innerHTML = marked.parse(currentChunk);
-                    scrollToBottom();
-                }
-            }, baseInterval);
-        }
-
-        // Auto Scroll to bottom smooth
-        function scrollToBottom() {
-            chatContainer.scrollTo({
-                top: chatContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
-
-        function updateUIState() {
-            // Update progress bar
-            const total = dialogueData.length;
-            const percentage = (currentIndex / total) * 100;
-            progressBar.style.width = `${percentage}%`;
-            progressText.innerText = `對話進度: ${currentIndex} / ${total}`;
-
-            // Update status badge
-            if (isTyping) {
-                statusBadge.innerText = 'AI 正在輸入...';
-                statusBadge.className = 'text-amber-400 animate-pulse';
-            } else if (currentIndex >= total) {
-                statusBadge.innerText = '模擬完成';
-                statusBadge.className = 'text-blue-400';
-            } else {
-                statusBadge.innerText = isAutoPlay ? '自動播放中' : '等待操作';
-                statusBadge.className = isAutoPlay ? 'text-emerald-400 animate-pulse' : 'text-slate-400';
-            }
-
-            // Button label & state
-            if (currentIndex >= total) {
-                btnNextText.innerText = '對話已結束 (點擊重播)';
-                btnNext.disabled = false;
-            } else if (isTyping) {
-                btnNextText.innerText = '生成中...';
-                btnNext.disabled = true;
-            } else {
-                btnNextText.innerText = `吐出下一段文字 (${currentIndex + 1}/${total})`;
-                btnNext.disabled = false;
-            }
-        }
-
-        function scheduleAutoPlay() {
-            if (autoPlayTimer) clearTimeout(autoPlayTimer);
-            const speed = parseFloat(speedSelect.value) || 1.5;
-            const delay = Math.max(800, 2000 / speed);
-            autoPlayTimer = setTimeout(() => {
-                if (isAutoPlay && !isTyping && currentIndex < dialogueData.length) {
-                    displayNextMessage();
-                }
-            }, delay);
-        }
-
-        function toggleAutoPlay() {
-            isAutoPlay = !isAutoPlay;
-            if (isAutoPlay) {
-                autoplayLabel.innerText = '自動播放: 開啟';
-                autoplayIcon.className = 'fa-solid fa-circle-pause text-emerald-400';
-                btnAutoplay.classList.add('border-emerald-500/50', 'bg-emerald-950/30');
-                if (!isTyping && currentIndex < dialogueData.length) {
-                    displayNextMessage();
+                    userInput.placeholder = "正在等待 AI 回應...";
                 }
             } else {
-                autoplayLabel.innerText = '自動播放: 關閉';
-                autoplayIcon.className = 'fa-solid fa-circle-play text-blue-400';
-                btnAutoplay.classList.remove('border-emerald-500/50', 'bg-emerald-950/30');
-                if (autoPlayTimer) clearTimeout(autoPlayTimer);
+                userInput.placeholder = "對話已結束。點擊重新開始";
             }
-            updateUIState();
         }
 
-        function restartConversation() {
-            if (autoPlayTimer) clearTimeout(autoPlayTimer);
-            currentIndex = 0;
-            isTyping = false;
-            isAutoPlay = false;
-            autoplayLabel.innerText = '自動播放: 關閉';
-            autoplayIcon.className = 'fa-solid fa-circle-play text-blue-400';
-            btnAutoplay.classList.remove('border-emerald-500/50', 'bg-emerald-950/30');
-
-            chatContainer.innerHTML = '';
-            
-            // Re-append initial welcome card
-            const newWelcome = document.createElement('div');
-            newWelcome.id = 'welcome-card';
-            newWelcome.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center shadow-xl backdrop-blur my-8';
-            newWelcome.innerHTML = `
-                <div class="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-                    <i class="fa-solid fa-comments text-2xl"></i>
-                </div>
-                <h2 class="text-xl font-bold text-white mb-2">已重置對話紀錄</h2>
-                <p class="text-slate-300 text-sm max-w-lg mx-auto mb-6 leading-relaxed">
-                    點擊下方按鈕或按下 <kbd class="px-2 py-0.5 bg-slate-700 border border-slate-600 rounded text-xs font-mono text-blue-300">Space</kbd> / <kbd class="px-2 py-0.5 bg-slate-700 border border-slate-600 rounded text-xs font-mono text-blue-300">Enter</kbd> 鍵開始模擬。
-                </p>
-                <button id="btn-start" onclick="displayNextMessage()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 inline-flex items-center gap-2">
-                    <i class="fa-solid fa-play"></i>
-                    重新開始模擬
-                </button>
-            `;
-            chatContainer.appendChild(newWelcome);
-
-            updateUIState();
-        }
-
-        // Main action trigger
-        btnNext.addEventListener('click', () => {
-            if (currentIndex >= dialogueData.length) {
-                restartConversation();
-            } else {
-                displayNextMessage();
-            }
-        });
-
-        if (btnStart) {
-            btnStart.addEventListener('click', displayNextMessage);
-        }
-
-        btnRestart.addEventListener('click', restartConversation);
-        btnAutoplay.addEventListener('click', toggleAutoPlay);
-
-        // Modal triggers
-        btnTranscript.addEventListener('click', () => {
-            modalTranscript.classList.remove('opacity-0', 'pointer-events-none');
-        });
-
-        btnCloseModal.addEventListener('click', () => {
-            modalTranscript.classList.add('opacity-0', 'pointer-events-none');
-        });
-
-        modalTranscript.addEventListener('click', (e) => {
-            if (e.target === modalTranscript) {
-                modalTranscript.classList.add('opacity-0', 'pointer-events-none');
-            }
-        });
-
-        // Keyboard navigation support
-        document.addEventListener('keydown', (e) => {
-            // Avoid triggering during modal view or input focus
-            if (modalTranscript.classList.contains('opacity-0') === false) {
-                if (e.key === 'Escape') {
-                    modalTranscript.classList.add('opacity-0', 'pointer-events-none');
-                }
+        async function triggerNextStep() {
+            if (currentIndex >= conversationData.length) {
+                chatArea.innerHTML = '';
+                currentIndex = 0;
+                updatePlaceholder();
                 return;
             }
 
-            if (e.code === 'Space' || e.code === 'Enter') {
-                e.preventDefault();
-                if (!isTyping) {
-                    if (currentIndex >= dialogueData.length) {
-                        restartConversation();
-                    } else {
-                        displayNextMessage();
-                    }
+            const currentData = conversationData[currentIndex];
+
+            if (currentData.role === 'user') {
+                // Simulate User Typing in Input box first
+                userInput.value = '';
+                for (let i = 0; i < currentData.text.length; i++) {
+                    userInput.value += currentData.text[i];
+                    await new Promise(r => setTimeout(r, 15));
                 }
-            } else if (e.code === 'KeyR') {
-                restartConversation();
+                await new Promise(r => setTimeout(r, 200));
+
+                // Append User Message Row
+                appendUserMessage(currentData.text);
+                userInput.value = '';
+                currentIndex++;
+                updatePlaceholder();
+
+                // Automatically trigger AI reply if next item is assistant
+                if (currentIndex < conversationData.length && conversationData[currentIndex].role === 'assistant') {
+                    setTimeout(() => {
+                        triggerNextStep();
+                    }, 500);
+                }
+            } else if (currentData.role === 'assistant') {
+                // Render Thinking indicator first
+                const thinkingRow = createThinkingRow();
+                chatArea.appendChild(thinkingRow);
+                chatArea.scrollTop = chatArea.scrollHeight;
+
+                await new Promise(r => setTimeout(r, 800)); // Thinking delay
+                thinkingRow.remove();
+
+                // Stream Assistant Response
+                await streamAssistantMessage(currentData.text);
+                currentIndex++;
+                updatePlaceholder();
             }
+        }
+
+        function appendUserMessage(text) {
+            const row = document.createElement('div');
+            row.className = 'message-row';
+            row.style.backgroundColor = 'var(--chat-user-bg)';
+            row.innerHTML = `
+                <div class="avatar user-avatar">你</div>
+                <div class="message-content"><p>${escapeHtml(text)}</p></div>
+            `;
+            chatArea.appendChild(row);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function createThinkingRow() {
+            const row = document.createElement('div');
+            row.className = 'message-row';
+            row.innerHTML = `
+                <div class="avatar ai-avatar">AI</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            `;
+            return row;
+        }
+
+        async function streamAssistantMessage(htmlContent) {
+            const row = document.createElement('div');
+            row.className = 'message-row';
+            row.innerHTML = `
+                <div class="avatar ai-avatar">AI</div>
+                <div class="message-content">
+                    <div class="text-body"></div><span class="cursor"></span>
+                    <div class="action-bar" style="display:none;">
+                        <button class="action-btn">📋 複製</button>
+                        <button class="action-btn">🔄 重新產生</button>
+                        <button class="action-btn">👍</button>
+                        <button class="action-btn">👎</button>
+                    </div>
+                </div>
+            `;
+            chatArea.appendChild(row);
+
+            const textBody = row.querySelector('.text-body');
+            const cursor = row.querySelector('.cursor');
+            const actionBar = row.querySelector('.action-bar');
+
+            // Quick typing rendering chunk by chunk
+            let currentLength = 0;
+            const fullLen = htmlContent.length;
+
+            while (currentLength < fullLen) {
+                // If encounters HTML tag, reveal entire tag at once
+                if (htmlContent[currentLength] === '<') {
+                    const tagEnd = htmlContent.indexOf('>', currentLength);
+                    if (tagEnd !== -1) {
+                        currentLength = tagEnd + 1;
+                    } else {
+                        currentLength++;
+                    }
+                } else {
+                    currentLength += Math.floor(Math.random() * 4) + 1;
+                }
+
+                if (currentLength > fullLen) currentLength = fullLen;
+                textBody.innerHTML = htmlContent.substring(0, currentLength);
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await new Promise(r => setTimeout(r, 12));
+            }
+
+            cursor.remove();
+            actionBar.style.display = 'flex';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        sendBtn.addEventListener('click', triggerNextStep);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') triggerNextStep();
         });
 
-        // Initialize script overview modal on page ready
-        window.addEventListener('DOMContentLoaded', () => {
-            buildTranscriptModal();
-            updateUIState();
-        });
+        // Initialize
+        updatePlaceholder();
     </script>
 </body>
 </html>
