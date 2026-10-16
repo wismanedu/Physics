@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>自由施力運動 - Fullscreen Adaptive Simulation</title>
+<title>自由施力運動模擬 (Free Force Motion Simulation)</title>
 <style>
     * {
         box-sizing: border-box;
@@ -16,11 +16,11 @@
         height: 100vh;
         overflow: hidden;
         font-family: "Microsoft JhengHei", "微軟正黑體", -apple-system, BlinkMacSystemFont, sans-serif;
-        background-color: #1e293b;
+        background-color: #0f172a;
         color: #f8fafc;
     }
 
-    /* 主容器：填滿視窗 */
+    /* 主容器：桌面版左右分割，橫向滿版無留白 */
     .app-container {
         display: flex;
         flex-direction: row;
@@ -31,32 +31,18 @@
         background-color: #0f172a;
     }
 
-    /* 左側主運動區域 - 強制伸展填滿 */
+    /* 左側主運動區域：佔用約 70% 寬度 */
     .main-stage {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        flex: 1 1 70%;
         height: 100%;
-        width: 100%;
-        background-color: #064e3b;
-        border: 2px solid #059669;
-        border-radius: 10px;
-        position: relative;
-        overflow: hidden;
+        min-width: 0;
     }
 
-    #applyF {
-        display: block;
-        width: 100%;
-        height: 100%;
-        touch-action: none;
-    }
-
-    /* 右側控制面板區域：靠上對齊 (flex-start)，避免元件上下分散 */
+    /* 右側控制面板區域：佔用約 30% 寬度 (不使用固定 px) */
     .control-panel {
-        width: 360px;
-        flex-shrink: 0;
+        flex: 0 0 30%;
+        max-width: 420px;
+        min-width: 280px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -68,7 +54,7 @@
         border-radius: 10px;
         height: 100%;
         box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
-        overflow-y: auto;
+        overflow: hidden;
     }
 
     .control-header {
@@ -78,7 +64,7 @@
 
     /* 加大標題字體 */
     .control-header h1 {
-        font-size: 1.6rem;
+        font-size: 1.75rem;
         color: #38bdf8;
         font-weight: 700;
         letter-spacing: 1px;
@@ -112,7 +98,7 @@
 
     /* 加大按鈕與內邊距 */
     .btn {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: bold;
         color: #0f172a;
         background-color: #34d399;
@@ -170,64 +156,78 @@
         font-weight: bold;
     }
 
-    /* 手機/直立裝置響應式：上（網格）下（控制面板）自動切換，保持滿版無滾動條 */
+    /* 手機/直立裝置響應式：精準比例切換，保持滿版無滾動條 */
     @media (max-width: 768px) {
         html, body {
             overflow: hidden;
             height: 100vh;
+            height: 100dvh;
         }
 
         .app-container {
             flex-direction: column;
             height: 100vh;
+            height: 100dvh;
             width: 100vw;
-            padding: 8px;
-            gap: 8px;
+            padding: 6px;
+            gap: 6px;
         }
 
         .main-stage {
-            flex: 1 1 55%;
-            height: auto;
-            min-height: 0;
+            flex: 62 1 0%;
+            height: 0;
+            width: 100%;
+            max-width: 100%;
         }
 
         .control-panel {
-            flex: 1 1 45%;
+            flex: 38 1 0%;
             width: 100%;
-            height: auto;
-            min-height: 0;
-            padding: 10px;
-            gap: 8px;
-            justify-content: flex-start;
-            overflow-y: auto;
+            max-width: 100%;
+            min-width: 0;
+            height: 0;
+            padding: 8px;
+            gap: 6px;
+            justify-content: space-between;
+            overflow: hidden;
+            box-shadow: none;
         }
 
         .control-header h1 {
-            font-size: 1.2rem;
+            font-size: 1rem;
+            line-height: 1.2;
         }
 
         .control-canvas-container {
-            max-height: 180px;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
         }
 
         #control {
-            width: 180px;
-            height: 180px;
+            width: auto;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 1 / 1;
         }
 
         .info-box {
-            font-size: 0.85rem;
-            padding: 6px 10px;
-            line-height: 1.3;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            line-height: 1.25;
         }
 
         .btn {
-            font-size: 0.95rem;
-            padding: 8px 6px;
+            font-size: 0.85rem;
+            padding: 6px 4px;
         }
 
         .button-group {
-            gap: 8px;
+            gap: 6px;
         }
     }
 </style>
@@ -247,11 +247,11 @@
         </div>
 
         <div class="control-canvas-container">
-            <canvas id="control" width="280" height="280">您的瀏覽器不支援 HTML5 Canvas。</canvas>
+            <canvas id="control" width="320" height="320">您的瀏覽器不支援 HTML5 Canvas。</canvas>
         </div>
 
         <div class="info-box">
-            拖曳右圖藍色分區中的<span style="color:#f87171;">紅箭頭</span>可改變外力 <b>F</b>。<br>
+            拖曳藍色分區中的<span style="color:#f87171;">紅箭頭</span>可改變外力 <b>F</b>。<br>
             <span style="color:#60a5fa;">藍箭頭</span> 代表運動速度 <b>v</b>。
         </div>
 
@@ -293,7 +293,7 @@ window.onload = function() {
         cxPat = caPat.getContext("2d");
         cxPat.fillStyle = "#f8fafc";
 
-        cxtF.font = '15pt sans-serif';
+        cxtF.font = 'bold 16pt sans-serif';
         cxtF.textAlign = "center";
         cxtF.textBaseline = "middle";
     }
@@ -314,7 +314,7 @@ window.onload = function() {
         canvasC.addEventListener('touchstart', touchDown, { passive: false });
         canvasC.addEventListener('touchmove', touchMove, { passive: false });
         canvasC.addEventListener('touchend', touchUp, false);
-        cxtC.font = '14pt sans-serif';
+        cxtC.font = 'bold 15pt sans-serif';
     }
 
     window.addEventListener('resize', handleResize);
@@ -363,7 +363,7 @@ function spc() {
     const btn = document.getElementById("bStart");
     if (myrequest) {
         stop();
-        btn.textContent = "繼續";
+        btn.textContent = "繼續運動";
     } else {
         start();
         btn.textContent = "暫停";
@@ -456,10 +456,10 @@ function paintF() {
 function drawBallF() {
     cxtF.beginPath();
     cxtF.fillStyle = "#10b981";
-    cxtF.arc(ballX, ballY, 14, 0, 2 * Math.PI);
+    cxtF.arc(ballX, ballY, 15, 0, 2 * Math.PI);
     cxtF.fill();
     cxtF.strokeStyle = "#ffffff";
-    cxtF.lineWidth = 2;
+    cxtF.lineWidth = 2.5;
     cxtF.stroke();
 
     if (showF) {
@@ -467,18 +467,18 @@ function drawBallF() {
         cxtF.fillStyle = "#ef4444";
         let arrowXF = ballX + forceX;
         let arrowYF = ballY - forceY;
-        arrow(cxtF, arrowXF, arrowYF, ballX, ballY, 2.5);
+        arrow(cxtF, arrowXF, arrowYF, ballX, ballY, 2.8);
         let netF = Math.sqrt(forceX * forceX + forceY * forceY);
-        let xF = Math.round(((netF + 22.0) * arrowXF - 22.0 * ballX) / (netF || 1));
-        let yF = Math.round(((netF + 22.0) * arrowYF - 22.0 * ballY) / (netF || 1));
-        cxtF.fillText(firstAppearance ? "力 F" : "F", xF || ballX, yF || ballY);
+        let xF = Math.round(((netF + 25.0) * arrowXF - 25.0 * ballX) / (netF || 1));
+        let yF = Math.round(((netF + 25.0) * arrowYF - 25.0 * ballY) / (netF || 1));
+        cxtF.fillText(firstAppearance ? "施力 F" : "F", xF || ballX, yF || ballY);
     }
     
     cxtF.fillStyle = "#38bdf8";
-    arrow(cxtF, velX + ballX, -velY + ballY, ballX, ballY, 2.5);
+    arrow(cxtF, velX + ballX, -velY + ballY, ballX, ballY, 2.8);
     let netV = Math.sqrt(velX * velX + velY * velY);
-    let xV = Math.round(((netV + 22.0) * (velX + ballX) - 22.0 * ballX) / (netV || 1));
-    let yV = Math.round(((netV + 22.0) * (-velY + ballY) - 22.0 * ballY) / (netV || 1));
+    let xV = Math.round(((netV + 25.0) * (velX + ballX) - 25.0 * ballX) / (netV || 1));
+    let yV = Math.round(((netV + 25.0) * (-velY + ballY) - 25.0 * ballY) / (netV || 1));
     cxtF.fillText(firstAppearance ? "速度 v" : "v", xV || ballX, yV || ballY);
 }
 
@@ -489,10 +489,14 @@ function drawGridF() {
     cxtF.strokeStyle = "rgba(52, 211, 153, 0.2)";
     cxtF.lineWidth = 1;
     cxtF.beginPath();
-    for (let i = 0; i <= widthF; i += 40) {
+    
+    // 依螢幕寬度判斷網格密度：手機版(<=768px)設為 20px 步長，電腦版設為 40px 步長
+    let step = window.innerWidth <= 768 ? 20 : 40;
+    
+    for (let i = 0; i <= widthF; i += step) {
         cxtF.moveTo(i, 0); cxtF.lineTo(i, heightF);
     }
-    for (let i = 0; i <= heightF; i += 40) {
+    for (let i = 0; i <= heightF; i += step) {
         cxtF.moveTo(0, i); cxtF.lineTo(widthF, i);
     }
     cxtF.stroke();
@@ -507,7 +511,7 @@ function drawGridF() {
 
 function trace() {
     cxPat.beginPath();
-    cxPat.arc(ballX, ballY, 2.5, 0, 2 * Math.PI);
+    cxPat.arc(ballX, ballY, 3.0, 0, 2 * Math.PI);
     cxPat.fill();
 }
 
@@ -524,23 +528,24 @@ function paintC() {
 function drawBallC() {
     cxtC.beginPath();
     cxtC.fillStyle = "#10b981";
-    cxtC.arc(widthCD2, heightCD2, 12, 0, 2 * Math.PI);
+    cxtC.arc(widthCD2, heightCD2, 13, 0, 2 * Math.PI);
     cxtC.fill();
 
     cxtC.fillStyle = showF ? "#ef4444" : "#fca5a5";
-    arrow(cxtC, arrowXC, arrowYC, widthCD2, heightCD2, 2);
+    arrow(cxtC, arrowXC, arrowYC, widthCD2, heightCD2, 2.4);
 
     cxtC.fillStyle = "#38bdf8";
-    arrow(cxtC, velX + widthCD2, -velY + heightCD2, widthCD2, heightCD2, 2);
+    arrow(cxtC, velX + widthCD2, -velY + heightCD2, widthCD2, heightCD2, 2.4);
 
     if (firstAppearance) {
         cxtC.fillStyle = "#fde047";
+        cxtC.textAlign = "center";
         cxtC.fillText("拖動紅箭頭改變 F", widthCD2, heightCD2 + 90);
         cxtC.strokeStyle = "#f43f5e";
         cxtC.beginPath();
-        cxtC.setLineDash([4, 4]);
+        cxtC.setLineDash([5, 5]);
         cxtC.lineWidth = 2.5;
-        cxtC.arc(arrowXC, arrowYC, 18, 0, 2 * Math.PI);
+        cxtC.arc(arrowXC, arrowYC, 20, 0, 2 * Math.PI);
         cxtC.stroke();
         cxtC.setLineDash([]);
     }
@@ -551,7 +556,7 @@ function drawGridC() {
     cxtC.fillRect(0, 0, widthC, heightC);
 
     if (!firstAppearance) {
-        cxtC.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        cxtC.strokeStyle = "rgba(255, 255, 255, 0.3)";
         cxtC.lineWidth = 1;
         cxtC.beginPath();
         cxtC.moveTo(0, heightCD2); cxtC.lineTo(widthC, heightCD2);
@@ -573,16 +578,16 @@ function locateCross() {
         let crossX = -(100.0 / dist) * (ballX - widthFD2) + widthCD2;
         let crossY = -(100.0 / dist) * (ballY - heightFD2) + heightCD2;
         cxtC.strokeStyle = "#ef4444";
-        cxtC.lineWidth = 2;
+        cxtC.lineWidth = 2.5;
         cxtC.beginPath();
-        cxtC.moveTo(crossX - 8, crossY); cxtC.lineTo(crossX + 8, crossY);
-        cxtC.moveTo(crossX, crossY - 8); cxtC.lineTo(crossX, crossY + 8);
+        cxtC.moveTo(crossX - 9, crossY); cxtC.lineTo(crossX + 9, crossY);
+        cxtC.moveTo(crossX, crossY - 9); cxtC.lineTo(crossX, crossY + 9);
         cxtC.stroke();
     }
 }
 
 function arrow(g, dx1, dy1, dx2, dy2, width) {
-    let d = Math.min(5.0, Math.max(1.0, 0.01 * width * Math.sqrt((dx1 - dx2) ** 2 + (dy1 - dy2) ** 2)));
+    let d = Math.min(6.0, Math.max(1.0, 0.01 * width * Math.sqrt((dx1 - dx2) ** 2 + (dy1 - dy2) ** 2)));
     let d2 = d * 3;
     let theta = dy1 !== dy2 ? Math.atan((dx2 - dx1) / (dy1 - dy2)) : Math.PI / 2.0;
     if (theta < 0) theta = Math.PI + theta;
@@ -616,7 +621,7 @@ function getMousePointerCoord(evt) {
 
 function mouseDown(evt) {
     let coord = getMousePointerCoord(evt);
-    if (Math.hypot(coord.x - arrowXC, coord.y - arrowYC) < 30) {
+    if (Math.hypot(coord.x - arrowXC, coord.y - arrowYC) < 32) {
         yesADrag = true;
         oldMX = coord.x; oldMY = coord.y;
         oldAX = arrowXC; oldAY = arrowYC;
@@ -651,7 +656,7 @@ function touchDown(evt) {
     let tx = (touch.clientX - rect.left) * scaleX;
     let ty = (touch.clientY - rect.top) * scaleY;
 
-    if (Math.hypot(tx - arrowXC, ty - arrowYC) < 35) {
+    if (Math.hypot(tx - arrowXC, ty - arrowYC) < 38) {
         evt.preventDefault();
         yesADrag = true;
         oldMX = tx; oldMY = ty;
