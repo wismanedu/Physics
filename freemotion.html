@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>自由施力運動</title>
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        touch-action: manipulation; /* 優化觸控回應 */
+    }
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden; /* 防止大螢幕出現滾動條 */
+        background-color: #f4f6f9;
+        font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+        color: #333;
+    }
+
+    /* 外層容器：大螢幕滿版，設定寬高 100% */
+    .app-container {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        background: #fff;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        width: 100vw;
+        height: 100vh;
+    }
+
+    /* 左側主運動畫布區：佔滿剩餘空間 */
+    .main-stage {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+    }
+    #applyF {
+        border: 2px solid #5f9ea0;
+        border-radius: 8px;
+        background-color: #A9F5BC;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* 右側控製麵板：改為靠上緊湊排列 (justify-content: flex-start) */
+    .control-panel {
+        width: 340px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; /* 緊湊靠上 */
+        gap: 15px; /* 控制各區塊之間的距離 */
+        background-color: #fafafa;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        height: 100%;
+        overflow-y: auto;
+    }
+    #control {
+        border: 2px solid #888;
+        border-radius: 8px;
+        background-color: #819FF7;
+        cursor: pointer;
+        width: 100%;
+        max-width: 280px;
+        aspect-ratio: 1 / 1; /* 力向量控制區維持 1:1 正方形 */
+        display: block;
+    }
+
+    /* 滑竿控制區 */
+    .slider-group {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #fff;
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+    }
+    .slider-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 15px;
+        font-weight: bold;
+        color: #333;
+    }
+    .slider-item label {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    /* 大觸控面積滑竿 */
+    .slider-item input[type="range"] {
+        width: 100%;
+        height: 12px;
+        border-radius: 6px;
+        background: #dcdcdc;
+        outline: none;
+        cursor: pointer;
+        -webkit-appearance: none;
+    }
+    .slider-item input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #0B3861;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .slider-item input[type="range"]::-moz-range-thumb {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #0B3861;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    /* 按鈕網格（適用觸控電視與手機點擊） */
+    .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+    .btn {
+        font-size: 15px;
+        font-weight: bold;
+        color: #0B3861;
+        background-color: #E0F8E6;
+        border: 1px solid #b2d8d8;
+        padding: 12px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn:active {
+        transform: scale(0.98);
+    }
+    .btn-danger {
+        background-color: #fce4e4;
+        border-color: #f7b2b2;
+    }
+
+    /* RWD 適應手機直立螢幕 */
+    @media (max-width: 768px) {
+        html, body {
+            overflow: auto;
+        }
+        .app-container {
+            flex-direction: column;
+            padding: 10px;
+            gap: 15px;
+            height: auto;
+            min-height: 100vh;
+        }
+        .main-stage {
+            height: 60vh;
+        }
+        .control-panel {
+            width: 100%;
+            height: auto;
+        }
+        #control {
+            max-width: 240px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- 左側運動區域 -->
+    <div class="main-stage">
+        <canvas id="applyF"></canvas>
+    </div>
+
+    <!-- 右側控製麵板 -->
+    <div class="control-panel">
+        <canvas id="control"></canvas>
+
+        <div class="slider-group">
+            <!-- 力份量滑竿 -->
+            <div class="slider-item">
+                <label>水平力 Fx: <span id="valFx">0</span> N</label>
+                <input type="range" id="sliderFx" min="-120" max="120" value="0" oninput="onSliderChange()">
+            </div>
+            <div class="slider-item">
+                <label>垂直力 Fy: <span id="valFy">0</span> N</label>
+                <input type="range" id="sliderFy" min="-120" max="120" value="0" oninput="onSliderChange()">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="bStart" class="btn" onclick="spc()">開始運動</button>
+            <button id="bClear" class="btn" onclick="clearT()">清除軌跡</button>
+            <button id="bZeroF" class="btn" onclick="zeroF()">F ≠ 0</button>
+            <button id="bBack" class="btn btn-danger" onclick="back()">停止並返回</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let then, now, delta, interval1 = 30, count = 0;
+let widthF, widthFD2, heightF, heightFD2, widthC, widthCD2, heightC, heightCD2;
+let myrequest = 0;
+let canvasF, canvasC, caPat;
+let cxtF, cxtC, cxPat;
+let deltat = 0.01;
+let arrowXC, arrowYC;
+let ballX, ballY, velX = 60.0, velY = 0.0, mass = 2.0, forceX = 0, forceY = 0;
+let yesADrag = false;
+let oldMX, oldMY, oldAX, oldAY;
+let showF = true;
+let firstAppearance = true;
+
+window.onload = function() {
+    canvasF = document.getElementById("applyF");
+    canvasC = document.getElementById("control");
+
+    // 監聽螢幕大小與方向變更
+    window.addEventListener('resize', resizeCanvases);
+    window.addEventListener('orientationchange', resizeCanvases);
+
+    if (canvasF && canvasF.getContext && canvasC && canvasC.getContext) {
+        cxtF = canvasF.getContext("2d");
+        cxtC = canvasC.getContext("2d");
+
+        caPat = document.createElement("canvas");
+        cxPat = caPat.getContext("2d");
+
+        canvasC.addEventListener('mousedown', mouseDown, false);
+        canvasC.addEventListener('mousemove', mouseMove, false);
+        canvasC.addEventListener('mouseup', mouseUp, false);
+        canvasC.addEventListener('mouseleave', mouseUp, false);
+        canvasC.addEventListener('touchstart', touchDown, { passive: false });
+        canvasC.addEventListener('touchmove', touchMove, { passive: false });
+        canvasC.addEventListener('touchend', touchUp, false);
+
+        resizeCanvases();
+        
+        ballX = widthFD2 - 100.0;
+        ballY = heightFD2 - 100.0;
+        arrowXC = widthCD2 + forceX;
+        arrowYC = heightCD2 - forceY;
+    }
+
+    updateSlidersUI();
+    paintC();
+    paintF();
+};
+
+/* 動態調整 Canvas 像素大小，並完整保留歷史軌跡 */
+function resizeCanvases() {
+    let rectF = canvasF.getBoundingClientRect();
+    let newWidthF = Math.floor(rectF.width) || 900;
+    let newHeightF = Math.floor(rectF.height) || 506;
+
+    // --- 保留軌跡核心邏輯 ---
+    // 1. 建立臨時畫布備份舊軌跡
+    let tempCanvas = document.createElement("canvas");
+    tempCanvas.width = caPat.width || newWidthF;
+    tempCanvas.height = caPat.height || newHeightF;
+    let tempCxt = tempCanvas.getContext("2d");
+    if (caPat.width > 0 && caPat.height > 0) {
+        tempCxt.drawImage(caPat, 0, 0); // 將舊軌跡複製到備份畫布
+    }
+
+    // 2. 更新主畫布與軌跡畫布尺寸（變更尺寸時瀏覽器會自動清空原畫布內容）
+    canvasF.width = newWidthF;
+    canvasF.height = newHeightF;
+    widthF = canvasF.width;
+    widthFD2 = widthF / 2;
+    heightF = canvasF.height;
+    heightFD2 = heightF / 2;
+
+    caPat.width = widthF;
+    caPat.height = heightF;
+
+    // 3. 重設繪圖樣式並將舊軌跡貼回全新的 caPat 上
+    cxPat.fillStyle = "black";
+    cxPat.drawImage(tempCanvas, 0, 0);
+    // ------------------------
+
+    let rectC = canvasC.getBoundingClientRect();
+    canvasC.width = Math.floor(rectC.width) || 300;
+    canvasC.height = Math.floor(rectC.height) || 300;
+    widthC = canvasC.width;
+    widthCD2 = widthC / 2;
+    heightC = canvasC.height;
+    heightCD2 = heightC / 2;
+
+    arrowXC = widthCD2 + forceX;
+    arrowYC = heightCD2 - forceY;
+
+    cxtF.font = '14pt sans-serif';
+    cxtF.textAlign = "center";
+    cxtF.textBaseline = "middle";
+    cxtC.font = '12pt sans-serif';
+
+    if (!myrequest) {
+        paintC();
+        paintF();
+    }
+}
+
+function onSliderChange() {
+    firstAppearance = false;
+    forceX = parseFloat(document.getElementById("sliderFx").value);
+    forceY = parseFloat(document.getElementById("sliderFy").value);
+    
+    let mag = Math.hypot(forceX, forceY);
+    if (mag > 140) {
+        let factor = 140 / mag;
+        forceX *= factor;
+        forceY *= factor;
+        document.getElementById("sliderFx").value = Math.round(forceX);
+        document.getElementById("sliderFy").value = Math.round(forceY);
+    }
+
+    arrowXC = widthCD2 + forceX;
+    arrowYC = heightCD2 - forceY;
+    
+    document.getElementById("valFx").textContent = Math.round(forceX);
+    document.getElementById("valFy").textContent = Math.round(forceY);
+
+    paintC();
+    paintF();
+}
+
+function updateSlidersUI() {
+    document.getElementById("sliderFx").value = Math.round(forceX);
+    document.getElementById("sliderFy").value = Math.round(forceY);
+    document.getElementById("valFx").textContent = Math.round(forceX);
+    document.getElementById("valFy").textContent = Math.round(forceY);
+}
+
+function spc() {
+    const btn = document.getElementById("bStart");
+    if (myrequest) {
+        stop();
+        btn.textContent = "繼續";
+    } else {
+        start();
+        btn.textContent = "暫停";
+    }
+}
+
+function start() {
+    if (!myrequest) {
+        firstAppearance = false;
+        then = window.performance.now();
+        myrequest = window.requestAnimationFrame(animate);
+    }
+}
+
+function stop() {
+    if (myrequest) {
+        window.cancelAnimationFrame(myrequest);
+        myrequest = 0;
+    }
+}
+
+function animate(time) {
+    if (canvasF && canvasF.getContext) {
+        now = window.performance.now();
+        myrequest = window.requestAnimationFrame(animate);
+        delta = now - then;
+
+        if (delta > interval1) {
+            calculate();
+            if (count >= 20) {
+                trace();
+                count = 0;
+            }
+            paintF();
+            paintC();
+            count++;
+            then = now - (delta % interval1);
+        }
+    }
+}
+
+function zeroF() {
+    showF = !showF;
+    const btn = document.getElementById("bZeroF");
+    btn.textContent = showF ? "F ≠ 0" : "F = 0";
+    if (!myrequest) {
+        paintF();
+        paintC();
+    }
+}
+
+function back() {
+    stop();
+    ballX = widthFD2 - 100.0;
+    ballY = heightFD2 - 100.0;
+    forceX = 0; forceY = 0;
+    arrowXC = widthCD2 + forceX;
+    arrowYC = heightCD2 - forceY;
+    velX = 60.0;
+    velY = 0.0;
+    updateSlidersUI();
+    clearT();
+    paintF();
+    paintC();
+    document.getElementById("bStart").textContent = "開始運動";
+}
+
+function calculate() {
+    let accelX = forceX / mass;
+    let accelY = forceY / mass;
+
+    if (!showF) {
+        accelX = 0.0;
+        accelY = 0.0;
+    }
+
+    let deltaSquare = deltat * deltat;
+    ballX += velX * deltat + 0.5 * accelX * deltaSquare;
+    ballY -= velY * deltat + 0.5 * accelY * deltaSquare;
+    velX += accelX * deltat;
+    velY += accelY * deltat;
+}
+
+function paintF() {
+    cxtF.clearRect(0, 0, widthF, heightF);
+    cxtF.save();
+
+    drawGridF();
+    drawBallF();
+    cxtF.drawImage(caPat, 0, 0);
+    
+    cxtF.restore();
+}
+
+function drawBallF() {
+    cxtF.beginPath();
+    cxtF.fillStyle = "green";
+    cxtF.arc(ballX, ballY, 12, 0, 2 * Math.PI);
+    cxtF.fill();
+
+    if (showF) {
+        cxtF.beginPath();
+        cxtF.fillStyle = "red";
+        let arrowXF = ballX + forceX;
+        let arrowYF = ballY - forceY;
+        arrow(cxtF, arrowXF, arrowYF, ballX, ballY, 2);
+        let netF = Math.sqrt(forceX * forceX + forceY * forceY);
+        let xF = Math.round(((netF + 18.0) * arrowXF - 18.0 * ballX) / netF);
+        let yF = Math.round(((netF + 18.0) * arrowYF - 18.0 * ballY) / netF);
+        cxtF.fillText(firstAppearance ? "力 F" : "F", xF || ballX, yF || ballY);
+    }
+    cxtF.fillStyle = "blue";
+    arrow(cxtF, velX + ballX, -velY + ballY, ballX, ballY, 2);
+    let netV = Math.sqrt(velX * velX + velY * velY);
+    let xV = Math.round(((netV + 18.0) * (velX + ballX) - 18.0 * ballX) / netV);
+    let yV = Math.round(((netV + 18.0) * (-velY + ballY) - 18.0 * ballY) / netV);
+    cxtF.fillText(firstAppearance ? "速度 v" : "v", xV || ballX, yV || ballY);
+}
+
+function drawGridF() {
+    cxtF.fillStyle = "#A9F5BC";
+    cxtF.fillRect(0, 0, widthF, heightF);
+
+    cxtF.strokeStyle = "#A9A9F5";
+    cxtF.lineWidth = 1;
+    cxtF.beginPath();
+    for (let i = 0; i <= widthF; i += 25) {
+        cxtF.moveTo(i, 0); cxtF.lineTo(i, heightF);
+    }
+    for (let i = 0; i <= heightF; i += 25) {
+        cxtF.moveTo(0, i); cxtF.lineTo(widthF, i);
+    }
+    cxtF.stroke();
+
+    cxtF.strokeStyle = "red";
+    cxtF.beginPath();
+    cxtF.moveTo(widthFD2 - 10, heightFD2); cxtF.lineTo(widthFD2 + 10, heightFD2);
+    cxtF.moveTo(widthFD2, heightFD2 - 10); cxtF.lineTo(widthFD2, heightFD2 + 10);
+    cxtF.stroke();
+}
+
+function trace() {
+    cxPat.beginPath();
+    cxPat.arc(ballX, ballY, 2, 0, 2 * Math.PI);
+    cxPat.fill();
+}
+
+function clearT() {
+    cxPat.clearRect(0, 0, widthF, heightF);
+    if (!myrequest) paintF();
+}
+
+function paintC() {
+    drawGridC();
+    drawBallC();
+}
+
+function drawBallC() {
+    cxtC.beginPath();
+    cxtC.fillStyle = "green";
+    cxtC.arc(widthCD2, heightCD2, 12, 0, 2 * Math.PI);
+    cxtC.fill();
+
+    cxtC.fillStyle = showF ? "red" : "#F5BCA9";
+    arrow(cxtC, arrowXC, arrowYC, widthCD2, heightCD2, 2);
+
+    cxtC.fillStyle = "blue";
+    arrow(cxtC, velX + widthCD2, -velY + heightCD2, widthCD2, heightCD2, 2);
+
+    if (firstAppearance) {
+        cxtC.fillStyle = "yellow";
+        cxtC.fillText("拖動箭頭或下方滑竿", widthCD2, heightCD2 + (heightCD2 * 0.7));
+        cxtC.strokeStyle = "magenta";
+        cxtC.beginPath();
+        cxtC.setLineDash([4, 4]);
+        cxtC.lineWidth = 3;
+        cxtC.arc(arrowXC, arrowYC, 20, 0, 2 * Math.PI);
+        cxtC.stroke();
+        cxtC.setLineDash([0, 0]);
+    }
+}
+
+function drawGridC() {
+    cxtC.fillStyle = "#819FF7";
+    cxtC.fillRect(0, 0, widthC, heightC);
+
+    if (!firstAppearance) {
+        cxtC.strokeStyle = "#D8D8D8";
+        cxtC.beginPath();
+        cxtC.moveTo(0, heightCD2); cxtC.lineTo(widthC, heightCD2);
+        cxtC.moveTo(widthCD2, 0); cxtC.lineTo(widthCD2, heightC);
+        cxtC.stroke();
+
+        cxtC.beginPath();
+        for (let r = 15; r <= widthCD2 * 0.9; r += 15) {
+            cxtC.arc(widthCD2, heightCD2, r, 0, 2 * Math.PI);
+        }
+        cxtC.stroke();
+        locateCross();
+    }
+}
+
+function locateCross() {
+    let dist = Math.sqrt((ballX - widthFD2) ** 2 + (ballY - heightFD2) ** 2);
+    if (dist > 350) {
+        let crossX = -(120.0 / dist) * (ballX - widthFD2) + widthCD2;
+        let crossY = -(120.0 / dist) * (ballY - heightFD2) + heightCD2;
+        cxtC.strokeStyle = "red";
+        cxtC.beginPath();
+        cxtC.moveTo(crossX - 10, crossY); cxtC.lineTo(crossX + 10, crossY);
+        cxtC.moveTo(crossX, crossY - 10); cxtC.lineTo(crossX, crossY + 10);
+        cxtC.stroke();
+    }
+}
+
+function arrow(g, dx1, dy1, dx2, dy2, width) {
+    let d = Math.min(5.0, Math.max(1.0, 0.01 * width * Math.sqrt((dx1 - dx2) ** 2 + (dy1 - dy2) ** 2)));
+    let d2 = d * 3;
+    let theta = dy1 !== dy2 ? Math.atan((dx2 - dx1) / (dy1 - dy2)) : Math.PI / 2.0;
+    if (theta < 0) theta = Math.PI + theta;
+    let cos = Math.cos(theta), sin = Math.sin(theta);
+
+    let a = (4.0 * dx1 + dx2) / 5.0;
+    let b = (4.0 * dy1 + dy2) / 5.0;
+
+    g.beginPath();
+    g.moveTo(a + d * cos, b + d * sin);
+    g.lineTo(a - d * cos, b - d * sin);
+    g.lineTo(dx2 - d * cos, dy2 - d * sin);
+    g.lineTo(dx2 + d * cos, dy2 + d * sin);
+
+    g.moveTo(dx1, dy1);
+    g.lineTo(a - d2 * cos, b - d2 * sin);
+    g.lineTo(a + d2 * cos, b + d2 * sin);
+    g.closePath();
+    g.fill();
+}
+
+function getMousePointerCoord(evt) {
+    let rect = canvasC.getBoundingClientRect();
+    let scaleX = canvasC.width / rect.width;
+    let scaleY = canvasC.height / rect.height;
+    return {
+        x: (evt.clientX - rect.left) * scaleX,
+        y: (evt.clientY - rect.top) * scaleY
+    };
+}
+
+function mouseDown(evt) {
+    let coord = getMousePointerCoord(evt);
+    if (Math.hypot(coord.x - arrowXC, coord.y - arrowYC) < 35) {
+        yesADrag = true;
+        oldMX = coord.x; oldMY = coord.y;
+        oldAX = arrowXC; oldAY = arrowYC;
+    }
+}
+
+function mouseMove(evt) {
+    let coord = getMousePointerCoord(evt);
+    if (yesADrag) {
+        firstAppearance = false;
+        let vx = oldAX + coord.x - oldMX;
+        let vy = oldAY + coord.y - oldMY;
+        if (Math.hypot(vx - widthCD2, vy - heightCD2) < 140.0) {
+            arrowXC = vx; arrowYC = vy;
+            forceX = arrowXC - widthCD2;
+            forceY = heightCD2 - arrowYC;
+            updateSlidersUI();
+        }
+        paintC();
+        paintF();
+    }
+}
+
+function mouseUp() {
+    yesADrag = false;
+}
+
+function touchDown(evt) {
+    let rect = canvasC.getBoundingClientRect();
+    let touch = evt.touches[0];
+    let scaleX = canvasC.width / rect.width;
+    let scaleY = canvasC.height / rect.height;
+    let tx = (touch.clientX - rect.left) * scaleX;
+    let ty = (touch.clientY - rect.top) * scaleY;
+
+    if (Math.hypot(tx - arrowXC, ty - arrowYC) < 40) {
+        evt.preventDefault();
+        yesADrag = true;
+        oldMX = tx; oldMY = ty;
+        oldAX = arrowXC; oldAY = arrowYC;
+    }
+}
+
+function touchMove(evt) {
+    if (yesADrag) {
+        evt.preventDefault();
+        let rect = canvasC.getBoundingClientRect();
+        let touch = evt.touches[0];
+        let scaleX = canvasC.width / rect.width;
+        let scaleY = canvasC.height / rect.height;
+        let tx = (touch.clientX - rect.left) * scaleX;
+        let ty = (touch.clientY - rect.top) * scaleY;
+
+        firstAppearance = false;
+        let vx = oldAX + tx - oldMX;
+        let vy = oldAY + ty - oldMY;
+        if (Math.hypot(vx - widthCD2, vy - heightCD2) < 140.0) {
+            arrowXC = vx; arrowYC = vy;
+            forceX = arrowXC - widthCD2;
+            forceY = heightCD2 - arrowYC;
+            updateSlidersUI();
+        }
+        paintC();
+        paintF();
+    }
+}
+
+function touchUp() {
+    yesADrag = false;
+}
+</script>
+</body>
+</html>
