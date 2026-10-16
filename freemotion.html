@@ -14,6 +14,7 @@
     html, body {
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         overflow: hidden;
         font-family: "Microsoft JhengHei", "微軟正黑體", -apple-system, BlinkMacSystemFont, sans-serif;
         background-color: #0f172a;
@@ -26,19 +27,21 @@
         flex-direction: row;
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         padding: 12px;
         gap: 12px;
         background-color: #0f172a;
     }
 
-    /* 左側主運動區域：佔用約 70% 寬度 */
+    /* 左側主運動區域：桌面版佔用約 70% 寬度 */
     .main-stage {
         flex: 1 1 70%;
         height: 100%;
         min-width: 0;
+        position: relative;
     }
 
-    /* 右側控制面板區域：佔用約 30% 寬度 (不使用固定 px) */
+    /* 右側控制面板區域：桌面版佔用約 30% 寬度 */
     .control-panel {
         flex: 0 0 30%;
         max-width: 420px;
@@ -51,7 +54,7 @@
         background-color: #1e293b;
         padding: 20px;
         border: 1px solid #334155;
-        border-radius: 10px;
+        border-radius: 12px;
         height: 100%;
         box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
         overflow: hidden;
@@ -62,12 +65,19 @@
         width: 100%;
     }
 
-    /* 加大標題字體 */
     .control-header h1 {
         font-size: 1.75rem;
         color: #38bdf8;
         font-weight: 700;
         letter-spacing: 1px;
+    }
+
+    .control-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
     }
 
     .control-canvas-container {
@@ -88,6 +98,13 @@
         max-height: 100%;
     }
 
+    .control-right-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
     /* 按鈕網格系統 */
     .button-group {
         display: grid;
@@ -96,14 +113,13 @@
         width: 100%;
     }
 
-    /* 加大按鈕與內邊距 */
     .btn {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         font-weight: bold;
         color: #0f172a;
         background-color: #34d399;
         border: none;
-        padding: 14px 10px;
+        padding: 12px 8px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.15s ease;
@@ -115,7 +131,7 @@
     }
 
     .btn:active {
-        transform: scale(0.97);
+        transform: scale(0.96);
     }
 
     .btn:hover {
@@ -139,15 +155,15 @@
         background-color: #fca5a5;
     }
 
-    /* 加大資訊文字 */
+    /* 說明文字框 */
     .info-box {
         width: 100%;
         background-color: #0f172a;
         border-radius: 8px;
-        padding: 12px 14px;
-        font-size: 1rem;
+        padding: 10px 12px;
+        font-size: 0.95rem;
         color: #94a3b8;
-        line-height: 1.6;
+        line-height: 1.5;
         border: 1px solid #334155;
     }
 
@@ -156,78 +172,88 @@
         font-weight: bold;
     }
 
-    /* 手機/直立裝置響應式：精準比例切換，保持滿版無滾動條 */
+    /* 手機/直立裝置響應式：大幅調整控制區 layout */
     @media (max-width: 768px) {
-        html, body {
-            overflow: hidden;
-            height: 100vh;
-            height: 100dvh;
-        }
-
         .app-container {
             flex-direction: column;
-            height: 100vh;
-            height: 100dvh;
-            width: 100vw;
             padding: 6px;
             gap: 6px;
         }
 
+        /* 運動主畫面佔約 70% 高度 */
         .main-stage {
-            flex: 62 1 0%;
+            flex: 70 1 0%;
             height: 0;
             width: 100%;
-            max-width: 100%;
         }
 
+        /* 控制面板佔約 30% 高度，採水平排列 */
         .control-panel {
-            flex: 38 1 0%;
+            flex: 30 1 0%;
             width: 100%;
             max-width: 100%;
             min-width: 0;
             height: 0;
-            padding: 8px;
+            padding: 8px 10px;
             gap: 6px;
-            justify-content: space-between;
-            overflow: hidden;
+            justify-content: flex-start;
             box-shadow: none;
         }
 
-        .control-header h1 {
-            font-size: 1rem;
-            line-height: 1.2;
+        .control-header {
+            display: none; /* 手機版隱藏大標題以省空間 */
         }
 
-        .control-canvas-container {
-            flex: 1;
-            min-height: 0;
-            display: flex;
+        .control-body {
+            flex-direction: row; /* 水平併排：左 Canvas，右 控制與說明 */
+            height: 100%;
             align-items: center;
-            justify-content: center;
-            width: 100%;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        /* 控制 Canvas 左側區域，確保至少佔畫面一定比例的正方形，易於操控 */
+        .control-canvas-container {
+            width: auto;
+            height: 100%;
+            aspect-ratio: 1 / 1;
+            max-height: 100%;
+            min-height: 100px; /* 保證最小可觸控高度 */
+            flex-shrink: 0;
         }
 
         #control {
-            width: auto;
+            width: 100%;
             height: 100%;
-            max-width: 100%;
-            max-height: 100%;
-            aspect-ratio: 1 / 1;
+            object-fit: contain;
+        }
+
+        /* 右側放說明與按鈕群組 */
+        .control-right-content {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 4px;
+            min-width: 0;
         }
 
         .info-box {
-            font-size: 0.75rem;
-            padding: 4px 8px;
+            font-size: 0.72rem;
+            padding: 4px 6px;
             line-height: 1.25;
-        }
-
-        .btn {
-            font-size: 0.85rem;
-            padding: 6px 4px;
+            border-radius: 6px;
         }
 
         .button-group {
             gap: 6px;
+        }
+
+        .btn {
+            font-size: 0.8rem;
+            padding: 6px 2px;
+            border-radius: 6px;
         }
     }
 </style>
@@ -240,26 +266,32 @@
         <canvas id="applyF">您的瀏覽器不支援 HTML5 Canvas。</canvas>
     </div>
 
-    <!-- 右側控制面板 -->
+    <!-- 右側/下方控制面板 -->
     <div class="control-panel">
         <div class="control-header">
             <h1>自由施力運動模擬</h1>
         </div>
 
-        <div class="control-canvas-container">
-            <canvas id="control" width="320" height="320">您的瀏覽器不支援 HTML5 Canvas。</canvas>
-        </div>
+        <div class="control-body">
+            <!-- 左側控制 Canvas -->
+            <div class="control-canvas-container">
+                <canvas id="control" width="320" height="320">您的瀏覽器不支援 HTML5 Canvas。</canvas>
+            </div>
 
-        <div class="info-box">
-            拖曳藍色分區中的<span style="color:#f87171;">紅箭頭</span>可改變外力 <b>F</b>。<br>
-            <span style="color:#60a5fa;">藍箭頭</span> 代表運動速度 <b>v</b>。
-        </div>
+            <!-- 右側 (手機版) / 下方 (PC版) 說明與按鈕組 -->
+            <div class="control-right-content">
+                <div class="info-box">
+                    拖曳藍區<span style="color:#f87171;">紅箭頭</span>改外力 <b>F</b>。<br>
+                    <span style="color:#60a5fa;">藍箭頭</span> 代表運動速度 <b>v</b>。
+                </div>
 
-        <div class="button-group">
-            <button id="bStart" class="btn" onclick="spc()">開始運動</button>
-            <button id="bClear" class="btn btn-secondary" onclick="clearT()">清除軌跡</button>
-            <button id="bZeroF" class="btn btn-secondary" onclick="zeroF()">F ≠ 0</button>
-            <button id="bBack" class="btn btn-danger" onclick="back()">停止並重置</button>
+                <div class="button-group">
+                    <button id="bStart" class="btn" onclick="spc()">開始運動</button>
+                    <button id="bClear" class="btn btn-secondary" onclick="clearT()">清除軌跡</button>
+                    <button id="bZeroF" class="btn btn-secondary" onclick="zeroF()">F ≠ 0</button>
+                    <button id="bBack" class="btn btn-danger" onclick="back()">停止重置</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
